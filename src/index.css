@@ -1,0 +1,306 @@
+/* DO NOT CHANGE */
+@import "tailwindcss";
+@import "tw-animate-css";
+@custom-variant dark (&:is(.dark *));
+
+/* DO NOT CHANGE */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* NONCE brand tokens */
+@theme {
+  --color-abyss: #071310;
+  --color-deep: #081713;
+  --color-surface: #10231d;
+  --color-elevated: #173229;
+  --color-mint: #57d5a5;
+  --color-mint-bright: #79e8bd;
+  --color-ivory: #f0f5f1;
+  --color-sage: #94aca0;
+  --color-hairline: #28483b;
+  --color-positive: #46c99a;
+  --color-caution: #e9b45e;
+  --color-critical: #f17676;
+  --color-signal: #79a9e8;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* CHANGE VALUES FOR THEME */
+:root {
+  --radius: 0.875rem;
+  --background: #071310;
+  --foreground: #f0f5f1;
+  --card: #0c1d17;
+  --card-foreground: #f0f5f1;
+  --popover: #10231d;
+  --popover-foreground: #f0f5f1;
+  --primary: #57d5a5;
+  --primary-foreground: #04241a;
+  --secondary: #173229;
+  --secondary-foreground: #f0f5f1;
+  --muted: #10231d;
+  --muted-foreground: #94aca0;
+  --accent: #173229;
+  --accent-foreground: #f0f5f1;
+  --destructive: #f17676;
+  --border: #28483b;
+  --input: #28483b;
+  --ring: #57d5a5;
+  --chart-1: #57d5a5;
+  --chart-2: #79a9e8;
+  --chart-3: #e9b45e;
+  --chart-4: #f17676;
+  --chart-5: #94aca0;
+  --sidebar: #081713;
+  --sidebar-foreground: #f0f5f1;
+  --sidebar-primary: #57d5a5;
+  --sidebar-primary-foreground: #04241a;
+  --sidebar-accent: #10231d;
+  --sidebar-accent-foreground: #f0f5f1;
+  --sidebar-border: #1d3b2f;
+  --sidebar-ring: #57d5a5;
+}
+
+.dark {
+  --background: #071310;
+  --foreground: #f0f5f1;
+  --card: #0c1d17;
+  --card-foreground: #f0f5f1;
+  --popover: #10231d;
+  --popover-foreground: #f0f5f1;
+  --primary: #57d5a5;
+  --primary-foreground: #04241a;
+  --secondary: #173229;
+  --secondary-foreground: #f0f5f1;
+  --muted: #10231d;
+  --muted-foreground: #94aca0;
+  --accent: #173229;
+  --accent-foreground: #f0f5f1;
+  --destructive: #f17676;
+  --border: #28483b;
+  --input: #28483b;
+  --ring: #57d5a5;
+  --chart-1: #57d5a5;
+  --chart-2: #79a9e8;
+  --chart-3: #e9b45e;
+  --chart-4: #f17676;
+  --chart-5: #94aca0;
+  --sidebar: #081713;
+  --sidebar-foreground: #f0f5f1;
+  --sidebar-primary: #57d5a5;
+  --sidebar-primary-foreground: #04241a;
+  --sidebar-accent: #10231d;
+  --sidebar-accent-foreground: #f0f5f1;
+  --sidebar-border: #1d3b2f;
+  --sidebar-ring: #57d5a5;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    background-image:
+      radial-gradient(
+        900px circle at 12% -8%,
+        rgba(87, 213, 165, 0.07),
+        transparent 60%
+      ),
+      radial-gradient(
+        700px circle at 96% 4%,
+        rgba(121, 169, 232, 0.035),
+        transparent 55%
+      );
+    background-attachment: fixed;
+  }
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.025em;
+  }
+  ::selection {
+    background: rgba(87, 213, 165, 0.28);
+    color: #f0f5f1;
+  }
+  :focus-visible {
+    outline: 2px solid rgba(87, 213, 165, 0.8);
+    outline-offset: 2px;
+  }
+}
+
+@utility font-tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@utility border-hairline {
+  border-color: #28483b;
+}
+
+.nonce-shell-grid {
+  background-image:
+    linear-gradient(to right, rgba(40, 72, 59, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(40, 72, 59, 0.22) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.nonce-glow {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(87, 213, 165, 0.18),
+    rgba(7, 19, 16, 0) 68%
+  );
+}
+
+.vault-door {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.16), transparent 42%),
+    radial-gradient(circle at 68% 78%, rgba(0, 0, 0, 0.55), transparent 55%),
+    conic-gradient(
+      from 140deg,
+      #0a1c16,
+      #1d4436 18%,
+      #0d241c 32%,
+      #2b5e4a 48%,
+      #0b1f18 62%,
+      #1b4234 78%,
+      #0a1c16
+    );
+  box-shadow:
+    inset 0 2px 0 rgba(121, 232, 189, 0.28),
+    inset 0 -18px 40px rgba(0, 0, 0, 0.65),
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    0 0 90px rgba(87, 213, 165, 0.12);
+}
+
+.vault-ring {
+  border: 1px solid rgba(87, 213, 165, 0.18);
+  box-shadow:
+    inset 0 0 32px rgba(87, 213, 165, 0.08),
+    0 0 0 8px rgba(10, 28, 22, 0.6);
+}
+
+@keyframes nonce-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nonce-pulse-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes nonce-scan {
+  0% {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(420%);
+    opacity: 0;
+  }
+}
+
+.animate-orbit-slow {
+  animation: nonce-orbit 48s linear infinite;
+}
+.animate-orbit-reverse {
+  animation: nonce-orbit 32s linear infinite reverse;
+}
+.animate-pulse-ring {
+  animation: nonce-pulse-ring 3.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.animate-scan {
+  animation: nonce-scan 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Fine, unobtrusive scrollbar in application panels */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #28483b transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #28483b;
+  border-radius: 999px;
+}
