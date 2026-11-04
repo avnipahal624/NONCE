@@ -1,3 +1,23 @@
+# NONCE — self-custodial crypto security vault
+
+NONCE is a consumer security layer for a self-custodial wallet: withdrawal limits
+and delays, decoy-based intrusion evidence, an explicit lockdown state machine and
+two-of-three guardian recovery.
+
+**This build is a sandbox demonstration.** No contract is deployed, no RPC watcher
+is running, no real funds are involved, and every execution path is labelled
+`SIMULATED`. Do not send real assets.
+
+- Product, architecture, schema and runbook: [`docs/NONCE.md`](docs/NONCE.md)
+- Reference Solidity vault and deployment steps: [`contracts/README.md`](contracts/README.md)
+- App routes: `/` marketing, `/auth`, `/onboarding`, `/dashboard`, `/vault`,
+  `/protection`, `/activity`, `/recovery`, `/settings`
+
+Commands: `bun convex dev --once` (codegen + function push), `bun tsc -b --noEmit`
+(typecheck). The platform runs both after each change; do not start dev servers.
+
+---
+
 ## Overview
 
 This project uses the following tech stack:

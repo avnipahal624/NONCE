@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 import { motion } from "framer-motion";
 import { Check, ChevronDown, Minus, ShieldCheck, Users } from "lucide-react";
 import {
@@ -187,18 +188,18 @@ export function CtaBand({
               <p className="mt-4 max-w-xl text-sm leading-7 text-sage">{description}</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-              <a
-                href="/auth?returnTo=%2Fonboarding"
+              <Link
+                to="/auth?returnTo=%2Fonboarding"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-mint px-7 text-sm font-semibold text-[#04241a] transition-colors hover:bg-mint-bright"
               >
                 Protect my wallet
-              </a>
-              <a
-                href="/security"
+              </Link>
+              <Link
+                to="/security"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-hairline bg-white/[0.02] px-7 text-sm text-ivory transition-colors hover:border-mint/40 hover:text-mint"
               >
                 Read the security model
-              </a>
+              </Link>
             </div>
           </div>
         </div>

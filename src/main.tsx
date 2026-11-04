@@ -11,15 +11,29 @@ import "./index.css";
 
 // Lazy load route components for better code splitting
 const Landing = lazy(() => import("./pages/Landing.tsx"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks.tsx"));
+const SecurityArchitecture = lazy(() => import("./pages/SecurityArchitecture.tsx"));
+const Features = lazy(() => import("./pages/Features.tsx"));
+const Faq = lazy(() => import("./pages/Faq.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
+const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
+const Vault = lazy(() => import("./pages/Vault.tsx"));
+const Protection = lazy(() => import("./pages/Protection.tsx"));
+const Activity = lazy(() => import("./pages/Activity.tsx"));
+const IncidentDetail = lazy(() => import("./pages/IncidentDetail.tsx"));
+const Recovery = lazy(() => import("./pages/Recovery.tsx"));
+const Settings = lazy(() => import("./pages/Settings.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-pulse text-muted-foreground">Loading...</div>
+    <div className="flex min-h-screen items-center justify-center bg-abyss">
+      <div className="flex items-center gap-2 text-xs text-sage">
+        <span className="size-1.5 animate-pulse rounded-full bg-mint" />
+        Loading NONCE…
+      </div>
     </div>
   );
 }
@@ -61,14 +75,12 @@ class RootErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-6">
+        <div className="flex min-h-screen items-center justify-center bg-abyss p-6 text-ivory">
           <div className="max-w-lg text-center">
             <p className="text-sm font-semibold">Preview runtime error</p>
-            <p className="mt-2 text-xs text-muted-foreground break-words">
-              {this.state.message}
-            </p>
+            <p className="mt-2 break-words text-xs text-sage">{this.state.message}</p>
             {this.state.stack && (
-              <pre className="mt-3 text-left text-[10px] leading-4 text-muted-foreground/80 max-h-40 overflow-auto rounded border border-border/60 p-2">
+              <pre className="mt-3 max-h-40 overflow-auto rounded border border-hairline/60 p-2 text-left text-[10px] leading-4 text-sage/80">
                 {this.state.stack}
               </pre>
             )}
@@ -81,8 +93,6 @@ class RootErrorBoundary extends React.Component<
 }
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
-
-
 
 function RouteSyncer() {
   const location = useLocation();
@@ -107,6 +117,9 @@ function RouteSyncer() {
   return null;
 }
 
+function Protected({ children }: { children: React.ReactNode }) {
+  return <RequireAuth>{children}</RequireAuth>;
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -120,16 +133,73 @@ createRoot(document.getElementById("root")!).render(
           <Suspense fallback={<RouteLoading />}>
             <Routes>
               <Route path="/" element={<Landing />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/security" element={<SecurityArchitecture />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/faq" element={<Faq />} />
+              <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
               <Route
-                path="/auth"
-                element={<AuthPage redirectAfterAuth="/dashboard" />}
+                path="/onboarding"
+                element={
+                  <Protected>
+                    <Onboarding />
+                  </Protected>
+                }
               />
               <Route
                 path="/dashboard"
                 element={
-                  <RequireAuth>
+                  <Protected>
                     <Dashboard />
-                  </RequireAuth>
+                  </Protected>
+                }
+              />
+              <Route
+                path="/vault"
+                element={
+                  <Protected>
+                    <Vault />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/protection"
+                element={
+                  <Protected>
+                    <Protection />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/activity"
+                element={
+                  <Protected>
+                    <Activity />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/activity/:incidentId"
+                element={
+                  <Protected>
+                    <IncidentDetail />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/recovery"
+                element={
+                  <Protected>
+                    <Recovery />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <Protected>
+                    <Settings />
+                  </Protected>
                 }
               />
               <Route path="*" element={<NotFound />} />
