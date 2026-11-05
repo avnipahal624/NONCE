@@ -68,7 +68,7 @@ restoration path.
 | L-01 | `receive()` rejected deposits while frozen. | Availability only; a freeze prevented top-ups. | Deposits remain allowed unless the recipient is the zero address; freeze blocks exits, not entries. |
 | L-02 | Backend allowlist silently truncated at 20 entries. | Could produce an unexpected policy. | Inputs are validated and the cap is explicit and reported. |
 | L-03 | Unused imports and a dead incident block. | Maintenance noise. | Removed during hardening. |
-| L-04 | Test suite covered happy paths and a few access checks only. | No invariant or adversarial coverage. | Expanded Foundry suite and documented inability to execute it in this environment. |
+| L-04 | Test suite covered happy paths and a few access checks only. | No invariant or adversarial coverage. | Expanded Foundry suite; 45 unit/invariant tests and one fork test pass locally. This remains bounded testing, not an audit. |
 
 ## Post-remediation adversarial review
 
@@ -77,7 +77,7 @@ accounting flaw introduced by the first reservation design.
 
 | ID | Finding | Impact | Resolution |
 | --- | --- | --- | --- |
-| H-09 | A pending withdrawal's rolling charge was counted only by its request timestamp, and `_freeChargeSlot` could reuse a slot once that timestamp was older than 24 hours even though the request was still executable. | An old queued request could execute after its allowance appeared to expire while a new request reused the same allowance, and its reservation slot could be overwritten. Both break the rolling-budget invariant and can overstate available balance protection. | Pending charges now count against the rolling budget until the request executes, cancels or expires. Execution re-timestamps the charge so the 24-hour window starts at actual spend. Pending slots are never reused. Regression tests were added, but remain unexecuted because Foundry is unavailable. |
+| H-09 | A pending withdrawal's rolling charge was counted only by its request timestamp, and `_freeChargeSlot` could reuse a slot once that timestamp was older than 24 hours even though the request was still executable. | An old queued request could execute after its allowance appeared to expire while a new request reused the same allowance, and its reservation slot could be overwritten. Both break the rolling-budget invariant and can overstate available balance protection. | Pending charges now count against the rolling budget until the request executes, cancels or expires. Execution re-timestamps the charge so the 24-hour window starts at actual spend. Pending slots are never reused. Regression tests were added and now pass in the local Foundry suite. |
 
 This finding is a reminder that the tests and review are not a substitute for an
 executed invariant suite. It was found by reading the accounting paths, not by a
@@ -114,7 +114,9 @@ status — was simulated or backend-enforced.
 
 ## Verification limits at review time
 
-No Foundry, `cast`, RPC endpoint, deployment key or funded testnet account was
-available. Contract tests and the deployment script are written but not
-executed here. No contract is deployed or verified. The audit findings above
-are based on source review, not dynamic analysis.
+The source review above was followed by local dynamic checks: `forge build`, 45
+unit/invariant tests, a Base Sepolia fork test, a no-broadcast deploy-script
+simulation and a Slither run. The full suite passes (46 including the fork test)
+and Slither reports only informational findings; see [`TEST_REPORT.md`](./TEST_REPORT.md).
+No contract is deployed or verified, and none of this is an independent audit.
+The findings above remain source-review findings, not a proof of safety.

@@ -400,7 +400,7 @@ contract NONCEVault {
     function requestWithdrawal(
         uint256 amount,
         address payable recipient
-    ) external onlyOwner nonReentrant returns (uint256 id) {
+    ) external nonReentrant onlyOwner returns (uint256 id) {
         if (frozen()) revert Frozen();
         if (recipient == address(0)) revert InvalidAddress();
         if (amount == 0 || amount > type(uint96).max) revert InvalidAmount();
@@ -499,10 +499,12 @@ contract NONCEVault {
         }
         _releaseReservation(id, request.amount, false);
 
+        // Emit before the external call so off-chain consumers cannot observe a
+        // transfer without its corresponding event. A failed call reverts the
+        // whole transaction, including this log.
+        emit WithdrawalExecuted(id, request.recipient, request.amount);
         (bool sent, ) = request.recipient.call{value: request.amount}("");
         if (!sent) revert TransferFailed();
-
-        emit WithdrawalExecuted(id, request.recipient, request.amount);
     }
 
     function _reserve(uint256 id, uint256 amount) internal {

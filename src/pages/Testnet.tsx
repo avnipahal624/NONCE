@@ -55,8 +55,10 @@ function chainTime(seconds: number): number {
 
 export default function Testnet() {
   const config = useQuery(api.nonce.testnetConfig.status);
+  const indexFeed = useQuery(api.nonce.testnetEvents.feed, { limit: 12 });
   const readVault = useAction(api.nonce.testnet.readVault);
   const verifyTransaction = useAction(api.nonce.testnet.verifyTransaction);
+  const syncIndexer = useAction(api.nonce.testnetIndexer.sync);
 
   const [state, setState] = useState<ReadState | null>(null);
   const [account, setAccount] = useState<ViemAddress | null>(null);
@@ -130,6 +132,28 @@ export default function Testnet() {
       await refresh();
     } catch (err) {
       setError(humanizeWalletError(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const runIndexer = async () => {
+    setBusy("index");
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await syncIndexer({});
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setNotice(
+        result.upToDate
+          ? `Indexer is current at block ${result.toBlock}.`
+          : `Indexed blocks ${result.fromBlock}–${result.toBlock}: ${result.inserted} new event(s), ${result.alerts} alert(s).`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The indexer could not run.");
     } finally {
       setBusy(null);
     }
@@ -537,6 +561,150 @@ export default function Testnet() {
                     <p>Expires {formatDateTime(chainTime(state.latestWithdrawal.expiresAt))}</p>
                   </div>
                 </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/80 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <SectionLabel>Indexed contract activity</SectionLabel>
+                <div className="flex items-center gap-2">
+                  <StatusPill
+                    label={indexFeed?.checkpoint?.health ?? "Not indexing"}
+                    tone={
+                      indexFeed?.checkpoint?.health === "ACTIVE"
+                        ? "safe"
+                        : indexFeed?.checkpoint?.health === "DEGRADED"
+                          ? "warn"
+                          : "neutral"
+                    }
+                  />
+                  <Button
+                    onClick={() => void runIndexer()}
+                    disabled={!configured || Boolean(busy)}
+                    variant="outline"
+                    className="h-8 rounded-lg border-hairline bg-black/20 text-[10px]"
+                  >
+                    <RefreshCw className={cn("size-3", busy === "index" && "animate-spin")} />
+                    Index logs
+                  </Button>
+                </div>
+              </div>
+              <p className="mt-2 text-[10px] leading-5 text-sage">
+                Confirmed Base Sepolia logs are indexed by a Convex worker and
+                deduplicated by transaction hash and log index. Alerts are
+                rule-based observations, not proof of compromise. The worker
+                polls every two minutes; the button forces a bounded tick.
+              </p>
+
+              {!indexFeed?.configured ? (
+                <p className="mt-3 rounded-lg border border-hairline/60 bg-black/20 px-3.5 py-3 text-[10px] leading-5 text-sage">
+                  No indexer feed is available until the vault address and RPC are
+                  configured. This is not an empty chain — it is missing
+                  configuration.
+                </p>
+              ) : (
+                <>
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-sage">
+                    <span>
+                      Last block{" "}
+                      <span className="font-mono text-ivory">
+                        {indexFeed.checkpoint?.lastProcessedBlock ?? "—"}
+                      </span>
+                    </span>
+                    <span>{indexFeed.events.length} recent event(s)</span>
+                    <span>{indexFeed.alerts.length} alert(s)</span>
+                    {indexFeed.checkpoint?.consecutiveFailures ? (
+                      <span className="text-[#F17676]">
+                        {indexFeed.checkpoint.consecutiveFailures} consecutive failure(s)
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                    <div className="rounded-lg border border-hairline/60 bg-black/20 p-3.5">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-sage">
+                        Confirmed events
+                      </p>
+                      {indexFeed.events.length === 0 ? (
+                        <p className="mt-2 text-[10px] leading-5 text-sage">
+                          No logs indexed yet. Run a transaction, then index logs.
+                        </p>
+                      ) : (
+                        <ul className="mt-2 space-y-2">
+                          {indexFeed.events.map((event) => (
+                            <li
+                              key={event.id}
+                              className="flex items-start justify-between gap-2 border-b border-hairline/40 pb-2 last:border-0 last:pb-0"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-[10px] text-ivory">
+                                  {event.eventType.replace(/([A-Z])/g, " $1").trim()}
+                                </p>
+                                <p className="mt-0.5 text-[9px] text-sage">
+                                  Block {event.blockNumber} · log {event.logIndex} ·{" "}
+                                  {event.finalized ? "finalized" : "awaiting confirmations"}
+                                </p>
+                              </div>
+                              {event.txHash ? (
+                                <a
+                                  href={explorerTx(config.explorerBaseUrl, event.txHash)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex shrink-0 items-center gap-1 font-mono text-[9px] text-mint hover:text-mint-bright"
+                                >
+                                  {event.txHash.slice(0, 8)}…
+                                  <ExternalLink className="size-2.5" />
+                                </a>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="rounded-lg border border-hairline/60 bg-black/20 p-3.5">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-sage">
+                        Rule-based alerts
+                      </p>
+                      {indexFeed.alerts.length === 0 ? (
+                        <p className="mt-2 text-[10px] leading-5 text-sage">
+                          No alerting events indexed. Deposits and approvals are
+                          recorded without raising an alert.
+                        </p>
+                      ) : (
+                        <ul className="mt-2 space-y-2">
+                          {indexFeed.alerts.map((alert) => (
+                            <li key={alert.id} className="border-b border-hairline/40 pb-2 last:border-0 last:pb-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-[10px] text-ivory">
+                                  {alert.category.replace(/_/g, " ")}
+                                </p>
+                                <StatusPill
+                                  label={alert.severity}
+                                  tone={
+                                    alert.severity === "CRITICAL" || alert.severity === "HIGH"
+                                      ? "danger"
+                                      : alert.severity === "WARNING"
+                                        ? "warn"
+                                        : "safe"
+                                  }
+                                  className="text-[8px]"
+                                />
+                              </div>
+                              <p className="mt-1 text-[9px] leading-4 text-sage">
+                                {alert.reason}
+                              </p>
+                              <p className="mt-1 text-[9px] text-sage">
+                                Block {alert.blockNumber}
+                                {alert.txHash ? ` · ${alert.txHash.slice(0, 10)}…` : ""}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
 

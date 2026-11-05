@@ -84,6 +84,7 @@ contract NONCEVaultTest is Test {
     address internal guardianTwo = address(0x602);
     address internal guardianThree = address(0x603);
     address payable internal recipient = payable(address(0xCAFE));
+    address internal secondRecipient = address(0xCAFF);
     address internal attacker = address(0xBAD);
 
     uint256 internal constant LIMIT = 1 ether;
@@ -94,6 +95,9 @@ contract NONCEVaultTest is Test {
     uint64 internal constant POLICY_DELAY = 2 days;
 
     function setUp() public {
+        // Forked chains do not give test contracts the local Anvil balance.
+        // Fund the test contract so invariant calls can pay for gas on a fork.
+        vm.deal(address(this), 1_000 ether);
         address[3] memory guardians = [guardianOne, guardianTwo, guardianThree];
         vault = new NONCEVault(
             owner,
@@ -109,7 +113,9 @@ contract NONCEVaultTest is Test {
         vm.deal(address(vault), 100 ether);
 
         handler = new VaultHandler(vault, owner);
+        vm.deal(address(handler), 100 ether);
         targetContract(address(handler));
+        targetSender(address(this));
     }
 
     /* ------------------------------ helpers --------------------------- */
@@ -175,17 +181,19 @@ contract NONCEVaultTest is Test {
     }
 
     function testSmallWithdrawalExecutesOnlyAfterDelay() public {
+        uint256 before = recipient.balance;
         vm.prank(owner);
         uint256 id = vault.requestWithdrawal(0.1 ether, recipient);
 
         vm.warp(block.timestamp + vault.SMALL_WITHDRAWAL_DELAY());
         vault.executeWithdrawal(id);
 
-        assertEq(recipient.balance, 0.1 ether);
+        assertEq(recipient.balance, before + 0.1 ether);
         assertEq(vault.reservedBalance(), 0);
     }
 
     function testLargeWithdrawalNeedsDelayAndTwoDistinctGuardians() public {
+        uint256 before = recipient.balance;
         vm.prank(owner);
         uint256 id = vault.requestWithdrawal(0.6 ether, recipient);
 
@@ -201,7 +209,7 @@ contract NONCEVaultTest is Test {
 
         vm.warp(block.timestamp + WITHDRAWAL_DELAY);
         vault.executeWithdrawal(id);
-        assertEq(recipient.balance, 0.6 ether);
+        assertEq(recipient.balance, before + 0.6 ether);
     }
 
     function testNonGuardianCannotApproveWithdrawal() public {
@@ -472,6 +480,8 @@ contract NONCEVaultTest is Test {
     function testAllowlistRemovalIsTimelockedAndGuardianApproved() public {
         vm.prank(owner);
         vault.setAllowlisted(recipient, true);
+        vm.prank(owner);
+        vault.setAllowlisted(secondRecipient, true);
 
         _propose(_policy(LIMIT, LARGE, ROLLING, WITHDRAWAL_DELAY, true));
         vm.warp(block.timestamp + POLICY_DELAY);

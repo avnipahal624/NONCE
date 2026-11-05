@@ -1,10 +1,10 @@
 # NONCEVault reference contract
 
 `NONCEVault.sol` is a **hardened reference implementation**, not a production
-system. It is unaudited and **not deployed from this repository**. Its Foundry
-tests have **not been executed** here because no Foundry toolchain is installed.
-The source does compile with solc 0.8.24 and the optimizer (200 runs), but a
-compile is not a test or an audit.
+system. It is unaudited and **not deployed from this repository**. The Foundry
+suite has been executed locally: **45 unit/invariant tests plus one Base Sepolia
+fork test pass** (see [`docs/TEST_REPORT.md`](../docs/TEST_REPORT.md)). A local
+pass is not an audit, a deployment or a guarantee of safety.
 
 Full security context:
 
@@ -53,7 +53,8 @@ Full security context:
 - No ERC-1271 or EIP-712 guardian signatures; guardians transact directly.
 - No batching, meta-transactions or relayer.
 - No keeper for expiry cleanup; `cancelExpired` is permissionless.
-- No formal verification, fuzzing run, invariant run or independent audit.
+- No formal verification or independent audit. Fuzz and invariant runs were
+  executed locally, but they are bounded runs, not proofs.
 
 ## Local build and tests
 
@@ -62,18 +63,19 @@ Full security context:
 bunx solc@0.8.24 --optimize --optimize-runs 200 \
   --bin contracts/NONCEVault.sol -o /tmp/nonce-solc
 
-# with Foundry:
+# with Foundry (forge-std v1.9.7 is vendored under lib/):
 cd contracts
-forge install foundry-rs/forge-std --no-commit
 forge build
-forge test -vvv
+forge test -vv
+forge test --fork-url https://sepolia.base.org -vv
 ```
 
 The test suite covers immediate delays, rolling/splitting, reservations, policy
 timelock and quorum, weakening classification, allowlist removal, guardian
 rotation, guardian-initiated recovery, cancellation rules, epoch invalidation,
 freeze/restoration, monitor restrictions, reentrancy, fuzzed amounts and an
-invariant handler. **None of it has been executed here.**
+invariant handler. The fork test deploys locally on Base Sepolia state without
+broadcasting. See `docs/TEST_REPORT.md` for exact counts and results.
 
 ## Base Sepolia deployment
 

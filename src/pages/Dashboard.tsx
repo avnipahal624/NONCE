@@ -1,4 +1,6 @@
 import { Link } from "react-router";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import {
   Activity,
   ArrowUpRight,
@@ -34,6 +36,7 @@ import {
 
 export default function Dashboard() {
   const { workspace, isLoading } = useWorkspace();
+  const testnetFeed = useQuery(api.nonce.testnetEvents.feed, { limit: 3 });
 
   if (isLoading) {
     return (
@@ -411,11 +414,49 @@ export default function Dashboard() {
             )}
             <div className="border-t border-hairline/50 px-5 py-3">
               <p className="flex items-center gap-1.5 text-[10px] text-sage">
-                <Lock className="size-3 text-mint/70" /> {formatTime(Date.now())} · sandbox ledger
+                <Lock className="size-3 text-mint/70" /> {formatTime(vault.lastSyncedAt)} · sandbox ledger
               </p>
             </div>
           </div>
         </div>
+
+        {testnetFeed?.configured && (
+          <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/80 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <SectionLabel>Base Sepolia testnet index</SectionLabel>
+              <StatusPill
+                label={testnetFeed.checkpoint?.health ?? "Not indexing"}
+                tone={
+                  testnetFeed.checkpoint?.health === "ACTIVE"
+                    ? "safe"
+                    : testnetFeed.checkpoint?.health === "DEGRADED"
+                      ? "warn"
+                      : "neutral"
+                }
+              />
+            </div>
+            <p className="mt-2 text-[11px] leading-5 text-sage">
+              Confirmed on-chain activity from the globally configured Base Sepolia
+              contract. This is separate from the sandbox ledger above.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-sage">
+              <span>
+                Last block{" "}
+                <span className="font-mono text-ivory">
+                  {testnetFeed.checkpoint?.lastProcessedBlock ?? "—"}
+                </span>
+              </span>
+              <span>{testnetFeed.events.length} recent event(s)</span>
+              <span>{testnetFeed.alerts.length} alert(s)</span>
+            </div>
+            <Link
+              to="/testnet"
+              className="mt-3 inline-flex items-center gap-1 text-[10px] text-mint hover:text-mint-bright"
+            >
+              Open testnet console <ArrowUpRight className="size-3" />
+            </Link>
+          </div>
+        )}
       </div>
     </AppShell>
   );

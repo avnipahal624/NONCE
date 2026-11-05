@@ -251,7 +251,7 @@ export const triggerDecoySignal = mutation({
       };
     }
 
-    const signalId = await ctx.db.insert("threatSignals", {
+    await ctx.db.insert("threatSignals", {
       vaultId: vault._id,
       decoyId: decoy._id,
       eventId,

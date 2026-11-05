@@ -1,10 +1,11 @@
 # Base Sepolia deployment and verification
 
 This is the procedure for deploying `contracts/NONCEVault.sol` to Base Sepolia
-(chain ID `84532`) and wiring the read-only testnet console. It has **not been
-executed in this environment**: no Foundry installation, RPC URL, deployer key or
-funded testnet account was available. Treat every step below as unverified until
-you observe it yourself.
+(chain ID `84532`) and wiring the testnet console and indexer. The contract has
+been built and tested locally, and the deploy script has been dry-run against a
+Base Sepolia fork. **No broadcast or deployment has occurred**: there is no
+funded deployer key, explicit broadcast authorization or Basescan key. Treat the
+broadcast steps below as unverified until you observe them yourself.
 
 The app never uses mainnet. Do not put real assets in this contract.
 
@@ -12,9 +13,10 @@ The app never uses mainnet. Do not put real assets in this contract.
 
 A deployment proves that a contract exists at an address and that its functions
 respond. It does **not** prove the code is correct. This contract is unaudited;
-its Foundry suite is written but not executed here. Deploy only testnet ETH and
-only after reading [`SECURITY_ARCHITECTURE.md`](./SECURITY_ARCHITECTURE.md) and
-[`KNOWN_LIMITATIONS.md`](./KNOWN_LIMITATIONS.md).
+its 45-test suite and Base Sepolia fork test pass locally, but that is bounded
+engineering validation, not an audit. Deploy only testnet ETH and only after
+reading [`SECURITY_ARCHITECTURE.md`](./SECURITY_ARCHITECTURE.md),
+[`TEST_REPORT.md`](./TEST_REPORT.md) and [`KNOWN_LIMITATIONS.md`](./KNOWN_LIMITATIONS.md).
 
 ## 1. Prerequisites
 
@@ -35,20 +37,19 @@ manager.
 ## 2. Compile and review first
 
 ```bash
-# Fast local syntax/optimizer check without Foundry
+# Fast local syntax/optimizer check without forge
 bunx solc@0.8.24 --optimize --optimize-runs 200 \
   --bin contracts/NONCEVault.sol -o /tmp/nonce-solc
 
-# Full build and tests once Foundry is installed
+# Full build and tests (forge-std v1.9.7 is already vendored)
 cd contracts
-forge install foundry-rs/forge-std --no-commit   # once
 forge build
-forge test -vvv
+forge test -vv
+forge test --fork-url "$BASE_SEPOLIA_RPC_URL" -vv
 ```
 
-The local solc check has passed for the current source in this environment. The
-Foundry build and tests have **not** run. Do not deploy because solc emitted
-bytecode; review the test results and get an independent audit first.
+The local build and tests have passed. Do not deploy because tests pass; review
+the test report and get an independent audit first.
 
 ## 3. Choose parameters
 
@@ -164,9 +165,16 @@ configuration it:
   `UNCONFIGURED`.
 
 The console is a **global view of one configured contract**. It is not a
-per-account TESTNET vault, does not write to the Convex database, and does not
-sign through the backend. Wallet writes go directly from the browser to the
-contract.
+per-account TESTNET vault and does not sign through the backend. Wallet writes go
+directly from the browser to the contract.
+
+A Convex cron (`src/convex/crons.ts`) polls the configured contract every two
+minutes, indexes confirmed logs into `blockchainEvents`, deduplicates by
+chain/contract/transaction/log index, rewinds a small range on a checkpoint hash
+mismatch and writes rule-based alerts to `testnetAlerts`. The console also
+exposes a manual **Index logs** action. With missing configuration the worker is
+a no-op and the UI reports blockers. It does not automatically call `freeze()`
+and it does not claim to see failed or off-chain activity.
 
 ## 6. Post-deployment checks
 
@@ -229,8 +237,8 @@ you observe them.
     guardians, wait the timelock and execute. Confirm attempts to rotate to the
     owner, monitor, an existing guardian or zero revert.
 18. **Reentrancy.** Only if you have a reviewed attacker contract; do not deploy
-    an unreviewed exploit. The test suite contains a reentrant recipient but has
-    not been executed here.
+    an unreviewed exploit. The local suite includes a reentrant recipient test,
+    which passes, but it is not a substitute for an independent review.
 
 ## 7. What can go wrong
 
@@ -252,11 +260,13 @@ you observe them.
 
 ## 8. Current blockers in this environment
 
-- No `forge` or `cast`; the Foundry suite is not executable here.
-- No RPC URL, deployer key, funded Base Sepolia account or Basescan key.
-- No deployed address or deployment transaction.
-- No Convex environment values for the contract.
+- No funded Base Sepolia deployer key and no explicit authorization to
+  broadcast/spend testnet ETH.
+- No Basescan API key for source verification.
+- No deployed address, deployment transaction or verified source.
+- No Convex environment values for the contract, so the indexer cron is a no-op
+  and `/testnet` shows blockers.
 
-Consequently this repository contains **no testnet deployment** and the UI must
-show those blockers. A successful local solc compile is not a deployment, and a
-written test is not a passing test.
+The toolchain and local tests are available: `forge build`, 45 unit/invariant
+tests and a Base Sepolia fork test pass, and the deploy script dry-run succeeds.
+Those facts still do not constitute a deployment.

@@ -10,17 +10,18 @@ audited, production-ready or fully tested.
   not an independent security audit.
 - **Not deployed.** There is no Base Sepolia address or deployment transaction
   from this repository.
-- **Foundry tests not executed.** `contracts/test/NONCEVault.t.sol` contains
-  adversarial, fuzz and invariant tests, but `forge`/`cast` are unavailable in
-  this environment. The test file is not evidence that the contract passes.
-- **Compiled only.** The contract compiles with solc 0.8.24 with the optimizer
-  (200 runs), runtime size approximately 19.5 KB. Compilation is not dynamic
-  verification.
+- **Local tests pass, but remain bounded.** `forge build` succeeds; 45
+  unit/invariant tests and one Base Sepolia fork test pass, including 256-run
+  invariant and fuzz campaigns. These are bounded engineering checks, not a
+  proof, an independent audit or a deployment.
+- **Bounded size.** The contract compiles with solc 0.8.24 with the optimizer
+  (200 runs), creation bytecode approximately 19.8 KB. Compilation is not
+  dynamic verification.
 - **ETH only.** No ERC-20, NFT, upgrade, module, multi-sig or cross-chain logic.
 - **No formal verification.** No Certora, Halmos, Kani, SMTChecker or equivalent
   proof was run.
-- **No external audit of the deploy script.** It is a straightforward script but
-  has not been executed or reviewed independently.
+- **No external audit of the deploy script.** It completed a no-broadcast fork
+  simulation, but has not been broadcast or reviewed independently.
 - **Fixed guardian count.** Three guardians, two required. There is no
   configurable threshold, guardian set larger than three, or social-recovery
   module.
@@ -55,10 +56,14 @@ audited, production-ready or fully tested.
 - **`approveWithdrawal` reverts with `ApprovalIncomplete`** when called on a
   request that does not need approvals. It is a clarity issue, not an
   authorization bypass, but the error name is misleading.
-- **No event indexing in the app.** The testnet console reads current state and
-  one latest withdrawal; it does not reconstruct full history from logs.
-- **No reorg/finality policy.** The console reports the receipt's block and
-  confirmations as observed; it does not enforce a confirmation depth.
+- **Indexer exists but is not live.** A two-minute Convex worker and a manual
+  “Index logs” action read confirmed Base Sepolia logs, deduplicate them, rewind
+  a small reorg window and create rule-based alerts. With no configured contract
+  or RPC it is a no-op. It has not been exercised against a real deployment and
+  does not index failed transactions, mempool activity or off-chain phishing.
+- **No finality proof.** The console reports the receipt's block and
+  confirmations as observed. The indexer rewinds a 12-block window when a
+  checkpoint hash changes, but that is bounded reorg handling, not finality.
 
 ## 2. Demo mode
 
@@ -83,9 +88,10 @@ audited, production-ready or fully tested.
 - **Guardian set changes after funding are blocked in the demo.** Initial setup
   can add/confirm/remove. Full post-funding rotation is implemented in the
   contract, not in the demo backend/UI.
-- **No real monitor.** Decoy signals are produced by a sandbox control. There is
-  no block indexer, mempool watcher, signature verification of chain events or
-  reorg handling.
+- **No real monitor in demo mode.** Decoy signals are produced by a sandbox
+  control. The separate testnet indexer described in section 3 does not feed the
+  demo incident pipeline, and there is no mempool watcher or signature
+  verification of chain events.
 - **No email, push or SMS.** Notifications are in-app only; there is no delivery
   receipt from an external provider.
 - **Protection scoring is heuristic.** It checks stored demo state and refused to
@@ -105,16 +111,17 @@ audited, production-ready or fully tested.
 - **Global, not per-user.** The console observes one contract configured by
   environment variables. There is no TESTNET vault row linked to a NONCE
   account, and no ownership check on the observed contract.
-- **No backend writes.** Allowlist changes and guardian rotation are available
-  in the contract ABI but not exposed as console forms. The console supports
-  freeze, deposit, withdrawal request/approve/execute/cancel, policy
+- **No backend contract writes.** Allowlist changes and guardian rotation are
+  available in the contract ABI but not exposed as console forms. The console
+  supports freeze, deposit, withdrawal request/approve/execute/cancel, policy
   propose/approve/execute/cancel, recovery propose/approve/execute and
-  restoration propose/approve/execute.
+  restoration propose/approve/execute. The backend does index confirmed logs.
 - **No guardian signature collection app.** Guardians must use a wallet and the
   console or another contract UI. There is no notification, approval link,
   hardware-wallet flow or transaction simulation before signing.
-- **No automated monitor.** Nothing calls `freeze()` from observed chain events.
-  The console's freeze button is manual and requires the monitor or owner key.
+- **No automated freeze.** The indexer classifies confirmed events and alerts,
+  but it holds no monitor key and does not call `freeze()`. Freezing remains a
+  manual wallet action in the console.
 - **No backend signing.** The backend cannot submit transactions. All writes are
   wallet-signed in the browser.
 - **RPC trust.** The server-side read trusts the configured RPC. A malicious or
@@ -167,20 +174,30 @@ audited, production-ready or fully tested.
 
 ## 6. Verification actually performed
 
-- `bun tsc -p tsconfig.app.json --noEmit` and `bun tsc -b --noEmit` — passed
-  at the end of this work.
-- `bun convex dev --once` — passed; functions and generated types pushed
+- `bun tsc -p tsconfig.app.json --noEmit`, `bun tsc -b --noEmit` and
+  `bun run build` — passed at the end of this work.
+- `bun run lint` — fails on 13 pre-existing React-hooks/purity errors and 19
+  warnings in template/earlier UI files; the new indexer/console and dashboard
+  integration pass a targeted run. No suppressions were added.
+- `bun convex dev --once` — passed; functions, cron and generated types pushed
   successfully to the development deployment.
-- `bunx solc@0.8.24 --optimize --optimize-runs 200` — compiled the final
-  contract successfully; no Foundry tests were run.
+- `forge build` — passed with Solidity 0.8.24 and the optimizer.
+- `forge test -vv` — **45 passed, 0 failed**; 3 invariants at 256 runs /
+  128,000 calls / 0 reverts; fuzz runs at 256.
+- `forge test --fork-url https://sepolia.base.org -vv` — **46 passed, 0 failed**,
+  including the fork deploy/deposit test.
+- Slither 0.11.6 — 13 informational findings, no high/medium findings.
+- `bunx solc@0.8.24 --optimize --optimize-runs 200` — compiled successfully;
+  creation bytecode 19,800 bytes.
 - `bun test tests/policyRules.test.ts` — 8 passed, 0 failed, covering backend
   rolling-reservation accounting and policy validation.
+- Deploy script dry-run on a Base Sepolia fork — succeeded, no broadcast.
 - Source inspection of the schema, backend guards, recovery cancellation rules,
-  testnet config/read/verify actions and the new console.
+  testnet config/read/verify actions, indexer and console.
 
-**Not run:** Foundry build/tests/fuzz/invariants, deployment, Basescan
-verification, RPC reads against a real contract, wallet transaction tests,
-browser end-to-end tests, load tests, accessibility audit and visual review.
+**Not run:** broadcast deployment, Basescan verification, live contract reads
+against a deployed address, wallet transaction tests, browser end-to-end tests,
+load tests, accessibility audit and visual review.
 
 ## 7. Before any real-value use
 

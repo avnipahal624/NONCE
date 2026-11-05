@@ -399,6 +399,8 @@ The contract has no admin sweep. Test funds can only leave through the policy.
   reasons.
 - `incidents` with status `FAILED` or unacknowledged high-risk records.
 - `systemHealth` rows for monitor, indexer and notification service.
+- Testnet indexer: `monitorCheckpoints` entry for `base-sepolia-testnet`,
+  `testnetAlerts`, last indexed block and consecutive failures.
 - Notification backlog: in-app delivery is real; email is not.
 - Testnet: frozen state, epoch, rolling remaining, reserved balance, active
   proposals and receipt status.
@@ -470,21 +472,26 @@ configured.
 
 ## 10. Verification performed
 
-- `bun convex dev --once` — passed at the end of the work; functions and generated
-  types are current.
+- `bun convex dev --once` — passed at the end of the work; functions, cron and
+  generated types are current.
 - `bun tsc -p tsconfig.app.json --noEmit` and `bun tsc -b --noEmit` — passed, exit 0.
-- `bunx solc@0.8.24 --optimize --optimize-runs 200` — compiled the current
-  contract after the final accounting fix (creation bytecode approximately
-  19.8 KB).
+- `forge build` — passed with Solidity 0.8.24 and the optimizer.
+- `forge test -vv` — 45 passed, 0 failed; 3 invariants at 256 runs / 128,000
+  calls / 0 reverts; fuzz runs at 256.
+- `forge test --fork-url https://sepolia.base.org -vv` — 46 passed, 0 failed,
+  including a local deploy/deposit on forked Base Sepolia state.
+- Slither 0.11.6 — 13 informational findings, no high/medium findings.
+- Deploy script dry-run on a Base Sepolia fork — succeeded; **no broadcast**.
 - `bun test tests/policyRules.test.ts` — 8 passed, 0 failed. Covers aged pending
   reservations, executed-window accounting, status exclusions, asset separation
   and policy weakening/minimum-delay validation.
 - Source inspection of schema, backend guards, recovery cancellation, policy
-  execution, testnet config/read/verify and the new console.
+  execution, testnet config/read/verify/indexer and the console.
 
-**Not run:** Foundry build/tests/fuzz/invariants, deployment, Basescan
-verification, live RPC reads, wallet transaction tests, browser end-to-end tests,
-load tests and accessibility/visual review.
+**Not run:** broadcast deployment, Basescan verification, live contract reads
+against a deployed address, wallet transaction tests, browser end-to-end tests,
+load tests and accessibility/visual review. See
+[`TEST_REPORT.md`](./TEST_REPORT.md).
 
 ---
 
@@ -492,10 +499,12 @@ load tests and accessibility/visual review.
 
 The full list is [`KNOWN_LIMITATIONS.md`](./KNOWN_LIMITATIONS.md). The main ones:
 
-- No audit, deployment or executed contract tests.
+- No independent audit or deployment. Local contract tests pass, but remain
+  bounded and are not a proof.
 - Demo balances, transfers and guardian approvals are simulated.
 - Demo policy and recovery delays are compressed to 2 minutes.
-- No live monitor or watcher; decoy signals are synthetic.
+- The testnet indexer is a bounded polling worker, not a proven 24/7 watcher;
+  decoy signals remain synthetic.
 - Testnet console is a global view of one configured contract, not a per-user
   TESTNET vault. It can write policy proposals but not allowlist or
   guardian-rotation changes.

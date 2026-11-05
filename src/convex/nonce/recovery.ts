@@ -22,8 +22,6 @@ import { sha256Hex } from "./hash";
 const RECOVERY_DELAY_MS = 2 * 60 * 1000;
 const RECOVERY_EXECUTION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-type RecoveryInitiator = "OWNER" | "GUARDIAN_SIMULATED";
-
 async function assertEligible(
   ctx: MutationCtx,
   vault: Doc<"vaults">,

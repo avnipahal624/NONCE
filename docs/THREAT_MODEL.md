@@ -152,9 +152,10 @@ changing function during the ETH transfer.
 the reservation is released before the external call; execution checks epoch,
 delay, expiry, threshold and balance before the call.
 
-**Residual:** the test exists but has not been executed here. A recipient that
-consumes all gas can make the transfer fail; the transaction reverts and the
-request stays unexecuted.
+**Residual:** the local reentrancy test passes, but a recipient that consumes all
+gas can still make the transfer fail; the transaction reverts and the request
+stays unexecuted. A bounded test is not a proof against every external-call
+interaction.
 
 ### T9 — Replay of a guardian approval
 
@@ -293,7 +294,7 @@ Production evidence export/anchoring is out of scope.
 | Two guardians collude | Low–Medium | Critical | Inherent to 2-of-3; documented |
 | Monitor false positive | Medium | Medium | Restoration path; availability trade-off |
 | Demo approval mistaken for real | Medium | High | Labelled simulated; testnet requires wallet transactions |
-| Contract bug / no audit | Medium | Critical | Not deployed; audit required before value |
+| Contract bug / no audit | Medium | Critical | Local tests pass; still unaudited and not deployed; audit required before value |
 | User sends to wrong address | Medium | High | Allowlist and delays reduce, cannot prevent |
 | RPC / confirmation error | Low–Medium | Medium | Receipt state shown; independent verification advised |
 | Lost guardians or owner key | Low | Critical | No backdoor; operational custody required |

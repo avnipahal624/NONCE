@@ -1,9 +1,10 @@
 # NONCE security architecture
 
 **Status:** hardened reference build, 5 November 2026. The contract is not
-deployed, not independently audited, and its Foundry suite has not been executed
-in this environment. This document describes what the code is intended to
-enforce, where that enforcement lives, and which parts remain simulated.
+deployed and not independently audited. Its local Foundry suite passes, including
+a Base Sepolia fork test, but those are bounded checks rather than a deployment
+or audit. This document describes what the code is intended to enforce, where
+that enforcement lives, and which parts remain simulated.
 
 ## 1. Design rule
 
@@ -198,6 +199,12 @@ record a failed lockdown, a pending submission and a confirmed observation; it
 must never say "locked" before confirmation. On testnet, the console reads the
 contract's `frozen()` and does not use the demo state machine as proof.
 
+A separate Convex cron indexes confirmed Base Sepolia logs into
+`blockchainEvents`, deduplicates by chain/contract/transaction/log index, rewinds
+a bounded range when a checkpoint hash changes, and writes rule-based
+`testnetAlerts`. It is observation only: it holds no key, cannot freeze the
+vault, and does not claim to see failed transactions or off-chain activity.
+
 ## 9. Data and audit boundary
 
 - Convex Auth identifies the account. Every vault-scoped read/write resolves the
@@ -211,6 +218,8 @@ contract's `frozen()` and does not use the demo state machine as proof.
   stays on the Convex deployment. The RPC URL is never sent to the browser.
 - The testnet console signs with the user's injected wallet. No key is sent to
   the backend.
+- The indexer stores public chain facts (addresses, hashes, block numbers and
+  decoded event arguments). It does not store keys or private user data.
 
 ## 10. What is not enforced
 
@@ -218,8 +227,10 @@ contract's `frozen()` and does not use the demo state machine as proof.
 - Demo USDC is a ledger entry, not a token contract.
 - Demo guardian approvals are simulated, even though the threshold logic is
   real. The contract requires actual guardian transactions.
-- There is no live watcher, mempool monitor, reorg handler or automated monitor
-  key in this build.
+- The indexer is a bounded polling worker, not a proven 24/7 watcher. It has no
+  mempool view, no failed-transaction tracing, no automated freeze key and no
+  external alert delivery. Reorg handling is a bounded rewind, not a finality
+  proof.
 - The testnet console is a global view of one configured contract, not a
   per-user TESTNET vault record. It can write policy proposals and selected
   withdrawal/recovery controls, but has no allowlist or guardian-rotation forms.
@@ -230,8 +241,9 @@ contract's `frozen()` and does not use the demo state machine as proof.
 
 ## 11. Security invariants to test
 
-The Foundry suite is written around these properties; it has not been executed
-here because Foundry is unavailable.
+The Foundry suite exercises these properties. It passes locally, including a
+256-run / 128,000-call invariant campaign and a Base Sepolia fork run; see
+[`TEST_REPORT.md`](./TEST_REPORT.md). Passing a bounded suite is not a proof.
 
 1. `frozen()` blocks every withdrawal execution.
 2. Every accepted withdrawal has `executeAfter > now`.
@@ -251,8 +263,10 @@ here because Foundry is unavailable.
 
 ## 12. Deployment status
 
-No contract is deployed from this repository. No Base Sepolia address, deployer
-key, funded account or RPC URL is available in this environment. The app must
-show that absence as a blocker. The deployment procedure and configuration keys
-are in [`TESTNET_DEPLOYMENT.md`](./TESTNET_DEPLOYMENT.md); residual risks are in
+No contract is deployed from this repository. The public Base Sepolia RPC is
+reachable for fork reads, but there is no configured contract address, funded
+deployer key, broadcast authorization or Basescan key. The app must show that
+absence as a blocker. The deployment procedure and configuration keys are in
+[`TESTNET_DEPLOYMENT.md`](./TESTNET_DEPLOYMENT.md); actual test results are in
+[`TEST_REPORT.md`](./TEST_REPORT.md); residual risks are in
 [`KNOWN_LIMITATIONS.md`](./KNOWN_LIMITATIONS.md).

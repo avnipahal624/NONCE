@@ -306,12 +306,36 @@ const schema = defineSchema(
       observedAt: v.number(),
       finalized: v.boolean(),
       evidenceHash: v.string(),
-      payload: v.string(),
-    })
+      payload: v.string(),    })
       .index("by_unique_key", ["uniqueKey"])
       .index("by_vault", ["vaultId"])
       .index("by_decoy", ["decoyId"])
-      .index("by_observed", ["observedAt"]),
+      .index("by_observed", ["observedAt"])
+      .index("by_network_block", ["network", "blockNumber"]),
+
+    /**
+     * Rule-based alerts derived only from confirmed testnet logs. These are
+     * observations, not proof of compromise and not actions taken on-chain.
+     */
+    testnetAlerts: defineTable({
+      chainId: v.number(),
+      contractAddress: v.string(),
+      eventId: v.id("blockchainEvents"),
+      eventType: v.string(),
+      severity: v.union(
+        v.literal("INFO"),
+        v.literal("WARNING"),
+        v.literal("HIGH"),
+        v.literal("CRITICAL"),
+      ),
+      category: v.string(),
+      reason: v.string(),
+      txHash: v.optional(v.string()),
+      blockNumber: v.number(),
+      createdAt: v.number(),
+    })
+      .index("by_event", ["eventId"])
+      .index("by_contract", ["contractAddress", "blockNumber"]),
 
     threatSignals: defineTable({
       vaultId: v.id("vaults"),
