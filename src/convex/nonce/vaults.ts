@@ -75,8 +75,8 @@ function buildProtection(args: {
     {
       key: "decoy",
       label: "Decoy sensors",
-      status: activeDecoys.length >= REQUIRED_DECOYS ? "OK" : "MISSING",
-      detail: `${activeDecoys.length} of ${REQUIRED_DECOYS} required decoys monitoring.`,
+      status: activeDecoys.length >= REQUIRED_DECOYS ? "OK" : "WARN",
+      detail: `${activeDecoys.length} active decoy sensor(s). These are supplementary; no decoy signal is required for withdrawal protections.`,
     },
     {
       key: "guardians",
@@ -88,9 +88,15 @@ function buildProtection(args: {
     {
       key: "withdrawal",
       label: "Withdrawal policy",
-      status: policy && policy.delayMinutes > 0 ? "OK" : "MISSING",
+      status:
+        policy &&
+        policy.delayMinutes >= 10 &&
+        Boolean(policy.rollingLimit) &&
+        policy.guardianThreshold >= 2
+          ? "OK"
+          : "MISSING",
       detail: policy
-        ? `Delays above ${policy.largeWithdrawalThreshold} ETH held for ${policy.delayMinutes} minutes.`
+        ? `${policy.maxPerTransaction} ETH per transfer, ${policy.rollingLimit ?? "missing"} ETH per 24h, ${policy.delayMinutes}-minute delay above ${policy.largeWithdrawalThreshold} ETH, ${policy.guardianThreshold}-of-3 approvals.`
         : "No withdrawal policy has been set.",
     },
     {
@@ -111,7 +117,11 @@ function buildProtection(args: {
     },
   ];
 
-  const mandatory = checklist.filter((item) => item.key !== "wallet");
+  // Decoys are supplementary sensors; a vault can be protected without one.
+  // A demo signer or an unconfirmed deployment can never be called protected.
+  const mandatory = checklist.filter(
+    (item) => item.key !== "wallet" && item.key !== "decoy",
+  );
   const mandatoryMet = mandatory.every((item) => item.status === "OK");
   const score = Math.round(
     (checklist.filter((item) => item.status === "OK").length / checklist.length) *
@@ -139,16 +149,30 @@ function buildProtection(args: {
     label = "Recovery in progress";
     summary =
       "Guardian recovery is active. Normal withdrawals stay blocked until permissions are replaced.";
-  } else if (mandatoryMet && ownershipVerified) {
-    level = "PROTECTED";
-    label = "Protected";
+  } else if (mandatoryMet && ownershipVerified && vault.mode === "DEMO") {
+    // Never label a simulated vault "Protected". The controls are configured,
+    // but no contract enforces them and the monitor is synthetic.
+    level = "PARTIAL";
+    label = "Demo controls configured";
     summary =
-      vault.mode === "DEMO"
-        ? "Every safeguard is configured in demo mode. Protection is simulated, not enforced on-chain."
-        : "All configured safeguards are active and monitoring is healthy.";
+      "The sandbox mirrors the hardened policy, rolling limits and guardian quorum, but nothing is enforced on-chain. This is not protection for real funds.";
+  } else if (
+    mandatoryMet &&
+    ownershipVerified &&
+    vault.deploymentStatus === "CONFIRMED"
+  ) {
+    level = "PROTECTED";
+    label = "Protected by contract";
+    summary =
+      "The configured controls are enforced by the verified vault contract. Monitoring health affects detection, not the on-chain withdrawal limits.";
   } else if (!mandatoryMet) {
     level = monitoringStatus === "OFFLINE" ? "AT_RISK" : "PARTIAL";
     label = monitoringStatus === "OFFLINE" ? "Degraded" : "Partially configured";
+  } else if (vault.mode !== "DEMO" && vault.deploymentStatus !== "CONFIRMED") {
+    level = "PARTIAL";
+    label = "Deployment unverified";
+    summary =
+      "No verified contract is recorded, so the interface cannot claim enforceable protection.";
   }
 
   return { level, score, label, summary, checklist, mandatoryMet, ownershipVerified };
@@ -364,6 +388,7 @@ export const createDemoVault = mutation({
       stateSource: "SIMULATED",
       stateUpdatedAt: now,
       monitoringEnabled: false,
+      securityEpoch: 1,
       createdAt: now,
       lastSyncedAt: now,
     });
@@ -384,6 +409,7 @@ export const createDemoVault = mutation({
     await ctx.db.insert("withdrawalPolicies", {
       vaultId,
       maxPerTransaction: DEFAULT_POLICY.maxPerTransaction,
+      rollingLimit: DEFAULT_POLICY.rollingLimit,
       delayMinutes: DEFAULT_POLICY.delayMinutes,
       largeWithdrawalThreshold: DEFAULT_POLICY.largeWithdrawalThreshold,
       guardianApprovalRequired: DEFAULT_POLICY.guardianApprovalRequired,

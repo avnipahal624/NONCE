@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, ShieldCheck, TriangleAlert } from "lucide-react";
+import { Clock, Loader2, ShieldCheck, TriangleAlert } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
@@ -28,10 +28,11 @@ export function PolicyDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const updatePolicy = useMutation(api.nonce.withdrawals.updatePolicy);
+  const propose = useMutation(api.nonce.policy.propose);
 
   const [form, setForm] = useState({
     maxPerTransaction: "1",
+    rollingLimit: "2.5",
     largeWithdrawalThreshold: "0.25",
     delayMinutes: 30,
     allowlistOnly: false,
@@ -42,6 +43,7 @@ export function PolicyDialog({
     if (!policy) return;
     setForm({
       maxPerTransaction: policy.maxPerTransaction,
+      rollingLimit: policy.rollingLimit ?? "2.5",
       largeWithdrawalThreshold: policy.largeWithdrawalThreshold,
       delayMinutes: policy.delayMinutes,
       allowlistOnly: policy.allowlistOnly,
@@ -53,17 +55,23 @@ export function PolicyDialog({
     event.preventDefault();
     setError(null);
     const max = Number(form.maxPerTransaction);
+    const rolling = Number(form.rollingLimit);
     const threshold = Number(form.largeWithdrawalThreshold);
     const entries = form.allowlist
       .split(",")
       .map((entry) => entry.trim())
       .filter(Boolean);
 
-    if (!Number.isFinite(max) || max <= 0) return setError("Enter a positive per-transaction limit.");
-    if (!Number.isFinite(threshold) || threshold <= 0) return setError("Enter a positive threshold.");
-    if (threshold > max) return setError("The threshold cannot exceed the per-transaction limit.");
-    if (!Number.isFinite(form.delayMinutes) || form.delayMinutes < 1)
-      return setError("The delay must be at least one minute.");
+    if (!Number.isFinite(max) || max <= 0)
+      return setError("Enter a positive per-transaction limit.");
+    if (!Number.isFinite(rolling) || rolling < max)
+      return setError("The 24-hour limit must be at least the per-transaction limit.");
+    if (!Number.isFinite(threshold) || threshold <= 0)
+      return setError("Enter a positive threshold.");
+    if (threshold > max)
+      return setError("The threshold cannot exceed the per-transaction limit.");
+    if (!Number.isFinite(form.delayMinutes) || form.delayMinutes < 10)
+      return setError("The security delay cannot be lower than 10 minutes.");
     if (form.allowlistOnly && entries.length === 0)
       return setError("Add at least one allowlisted address, or turn allowlist-only off.");
     if (entries.some((entry) => !isValidAddress(entry)))
@@ -71,19 +79,23 @@ export function PolicyDialog({
 
     setBusy(true);
     try {
-      await updatePolicy({
+      await propose({
         vaultId,
-        maxPerTransaction: form.maxPerTransaction,
-        delayMinutes: form.delayMinutes,
-        largeWithdrawalThreshold: form.largeWithdrawalThreshold,
-        guardianApprovalRequired: true,
-        guardianThreshold: 2,
-        allowlistOnly: form.allowlistOnly,
-        allowlist: entries,
+        policy: {
+          maxPerTransaction: form.maxPerTransaction,
+          rollingLimit: form.rollingLimit,
+          delayMinutes: form.delayMinutes,
+          largeWithdrawalThreshold: form.largeWithdrawalThreshold,
+          guardianThreshold: 2,
+          allowlistOnly: form.allowlistOnly,
+          allowlist: entries,
+        },
       });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "The policy could not be saved.");
+      setError(
+        err instanceof Error ? err.message : "The policy proposal could not be created.",
+      );
     } finally {
       setBusy(false);
     }
@@ -101,31 +113,51 @@ export function PolicyDialog({
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="border-hairline bg-[#0b1c16] sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto border-hairline bg-[#0b1c16] sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="text-ivory">Withdrawal protection</DialogTitle>
+          <DialogTitle className="text-ivory">Propose a protection change</DialogTitle>
           <DialogDescription className="text-[12px] leading-6 text-sage">
-            These rules are enforced against sandbox withdrawal requests. In production they must
-            live in the vault contract — a server-side setting alone is not enforcement.
+            Policy edits are no longer instant. Every change waits out a timelock; any
+            security-reducing field also needs two of three guardian approvals. The current
+            policy remains in force until the proposal executes.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="text-[11px] font-medium text-ivory/80">Per-transaction limit (ETH)</span>
+              <span className="text-[11px] font-medium text-ivory/80">
+                Per-transaction limit (ETH)
+              </span>
               <Input
                 value={form.maxPerTransaction}
-                onChange={(event) => setForm({ ...form, maxPerTransaction: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, maxPerTransaction: event.target.value })
+                }
                 inputMode="decimal"
                 className="mt-1.5 h-10 border-hairline bg-black/25 text-sm"
               />
             </label>
             <label className="block">
-              <span className="text-[11px] font-medium text-ivory/80">Large request threshold (ETH)</span>
+              <span className="text-[11px] font-medium text-ivory/80">
+                Rolling 24-hour limit (ETH)
+              </span>
+              <Input
+                value={form.rollingLimit}
+                onChange={(event) => setForm({ ...form, rollingLimit: event.target.value })}
+                inputMode="decimal"
+                className="mt-1.5 h-10 border-hairline bg-black/25 text-sm"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-medium text-ivory/80">
+                Large request threshold (ETH)
+              </span>
               <Input
                 value={form.largeWithdrawalThreshold}
-                onChange={(event) => setForm({ ...form, largeWithdrawalThreshold: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, largeWithdrawalThreshold: event.target.value })
+                }
                 inputMode="decimal"
                 className="mt-1.5 h-10 border-hairline bg-black/25 text-sm"
               />
@@ -134,18 +166,14 @@ export function PolicyDialog({
               <span className="text-[11px] font-medium text-ivory/80">Delay (minutes)</span>
               <Input
                 type="number"
-                min={1}
+                min={10}
                 max={1440}
                 value={form.delayMinutes}
-                onChange={(event) => setForm({ ...form, delayMinutes: Number(event.target.value) })}
+                onChange={(event) =>
+                  setForm({ ...form, delayMinutes: Number(event.target.value) })
+                }
                 className="mt-1.5 h-10 border-hairline bg-black/25 text-sm"
               />
-            </label>
-            <label className="block">
-              <span className="text-[11px] font-medium text-ivory/80">Guardian threshold</span>
-              <div className="mt-1.5 flex h-10 items-center rounded-md border border-hairline bg-white/[0.02] px-3 text-sm text-sage">
-                2 of 3 · fixed in this build
-              </div>
             </label>
           </div>
 
@@ -153,13 +181,15 @@ export function PolicyDialog({
             <input
               type="checkbox"
               checked={form.allowlistOnly}
-              onChange={(event) => setForm({ ...form, allowlistOnly: event.target.checked })}
+              onChange={(event) =>
+                setForm({ ...form, allowlistOnly: event.target.checked })
+              }
               className="mt-0.5 size-4 accent-[#57D5A5]"
             />
             <span>
               <span className="block text-[12px] text-ivory">Allowlist-only destinations</span>
               <span className="mt-0.5 block text-[11px] text-sage">
-                Enabling this rejects every destination outside the saved list.
+                Disabling this or removing a saved recipient is classified as weakening.
               </span>
             </span>
           </label>
@@ -174,9 +204,16 @@ export function PolicyDialog({
             />
           </label>
 
-          <div className="flex items-start gap-2 rounded-lg border border-[#79A9E8]/20 bg-[#79A9E8]/[0.05] px-3.5 py-2.5 text-[10px] leading-5 text-[#79A9E8]">
-            <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
-            Every change is recorded in the audit trail with the actor and timestamp.
+          <div className="rounded-lg border border-[#E9B45E]/20 bg-[#E9B45E]/[0.05] px-3.5 py-3 text-[10px] leading-5 text-[#E9B45E]">
+            <p className="flex items-start gap-2">
+              <Clock className="mt-0.5 size-3.5 shrink-0" />
+              Contract minimum policy delay is 24 hours. This sandbox compresses it to two
+              minutes and labels the proposal as simulated.
+            </p>
+            <p className="mt-1.5 flex items-start gap-2">
+              <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
+              Weakening changes need 2-of-3 guardians. There is no owner-only override.
+            </p>
           </div>
 
           {error && (
@@ -185,8 +222,9 @@ export function PolicyDialog({
             </p>
           )}
           {saved && (
-            <p className="rounded-md border border-mint/25 bg-mint/[0.05] px-3 py-2 text-[11px] text-mint">
-              Withdrawal policy saved.
+            <p className="rounded-md border border-mint/25 bg-mint/[0.05] px-3 py-2 text-[11px] leading-5 text-mint">
+              Proposal created. The current policy is unchanged until the timelock, and
+              guardian quorum if required, is satisfied.
             </p>
           )}
 
@@ -195,7 +233,11 @@ export function PolicyDialog({
             disabled={busy}
             className="h-10 w-full rounded-lg bg-mint text-sm font-semibold text-[#04241a] hover:bg-mint-bright"
           >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : "Save protection rules"}
+            {busy ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              "Create timelocked proposal"
+            )}
           </Button>
         </form>
       </DialogContent>

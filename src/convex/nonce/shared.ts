@@ -29,6 +29,7 @@ export const SUPPORTED_ASSETS = [
 
 export const DEFAULT_POLICY = {
   maxPerTransaction: "0.5",
+  rollingLimit: "2.5",
   delayMinutes: 30,
   largeWithdrawalThreshold: "0.1",
   guardianApprovalRequired: true,
@@ -36,9 +37,28 @@ export const DEFAULT_POLICY = {
   allowlistOnly: false,
 } as const;
 
+/**
+ * USDC is quoted in token units, not ETH. These limits are deliberately
+ * separate so a 0.5 ETH policy can never be mistaken for a 0.5 USDC limit.
+ */
+export const STABLE_POLICY = {
+  maxPerTransaction: "2500",
+  rollingLimit: "10000",
+  delayMinutes: 30,
+  largeWithdrawalThreshold: "500",
+} as const;
+
 export const GUARDIAN_THRESHOLD = 2;
 export const REQUIRED_GUARDIANS = 3;
 export const REQUIRED_DECOYS = 2;
+
+/** Contract minimums mirrored by the demo. The demo compresses the timelock. */
+export const MIN_WITHDRAWAL_DELAY_MINUTES = 10;
+export const MIN_POLICY_DELAY_MINUTES = 24 * 60;
+export const DEMO_POLICY_DELAY_MINUTES = 2;
+export const WITHDRAWAL_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+export const ROLLING_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const PROPOSAL_EXECUTION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function isValidAddress(value: string): boolean {
   if (!/^0x[a-fA-F0-9]{40}$/.test(value)) return false;

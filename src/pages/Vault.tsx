@@ -17,6 +17,7 @@ import { EmptyState, PageHeader, SectionLabel } from "@/components/nonce/PageHea
 import { StatusPill } from "@/components/nonce/StatusPill";
 import { Address } from "@/components/nonce/Address";
 import { PolicyDialog } from "@/components/nonce/PolicyDialog";
+import { PolicyProposals } from "@/components/nonce/PolicyProposals";
 import { DepositDialog, WithdrawDialog } from "@/components/nonce/AssetActions";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -35,9 +36,9 @@ const STATUS_TONE: Record<string, Tone> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  QUEUED: "Queued under guard",
-  AWAITING_GUARDIANS: "Awaiting guardians",
-  READY: "Ready to execute",
+  QUEUED: "Queued · delay active",
+  AWAITING_GUARDIANS: "Awaiting guardians + delay",
+  READY: "Quorum met · delay active",
   COMPLETED: "Executed · simulated",
   CANCELLED: "Cancelled",
   BLOCKED: "Blocked by lockdown",
@@ -112,7 +113,7 @@ export default function VaultPage() {
         <PageHeader
           eyebrow="My vault"
           title={vault.name}
-          description="Balances, withdrawal rules and every request that is still waiting. Nothing leaves immediately without a policy check."
+          description="Balances, withdrawal rules and every request that is still waiting. Each request has a minimum delay and reserves its share of a rolling 24-hour budget."
           actions={
             <>
               <DepositDialog vaultId={vault._id} assets={assets}>
@@ -181,16 +182,18 @@ export default function VaultPage() {
               <SectionLabel>Withdrawal policy</SectionLabel>
               <PolicyDialog vaultId={vault._id} policy={policy}>
                 <button type="button" className="text-[10px] text-mint hover:text-mint-bright">
-                  Edit rules
+                  Propose change
                 </button>
               </PolicyDialog>
             </div>
             <div className="mt-4 space-y-2.5">
               {[
                 { label: "Per-transaction limit", value: `${policy?.maxPerTransaction ?? "—"} ETH` },
+                { label: "Rolling 24-hour limit", value: `${policy?.rollingLimit ?? "2.5"} ETH` },
                 { label: "Delay above", value: `${policy?.largeWithdrawalThreshold ?? "—"} ETH` },
                 { label: "Hold duration", value: `${policy?.delayMinutes ?? 0} minutes` },
-                { label: "Guardian approval", value: policy?.guardianApprovalRequired ? "2 of 3 required" : "Not required" },
+                { label: "Minimum delay", value: "10 minutes on every request" },
+                { label: "Guardian approval", value: "2 of 3 required" },
                 { label: "Allowlist only", value: policy?.allowlistOnly ? `${policy.allowlist.length} saved addresses` : "Off" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between gap-3 text-[11px]">
@@ -202,9 +205,11 @@ export default function VaultPage() {
             <div className="mt-4 flex items-start gap-2 rounded-lg border border-mint/15 bg-mint/[0.04] px-3 py-2.5">
               <Lock className="mt-0.5 size-3.5 shrink-0 text-mint" />
               <p className="text-[10px] leading-5 text-mint/90">
-                A confirmed lockdown cancels pending requests instead of executing them.
+                Requests reserve their amount and rolling allowance immediately. A lockdown
+                cancels pending requests instead of executing them.
               </p>
             </div>
+            <PolicyProposals guardians={workspace.guardians} vaultState={vault.state} />
           </div>
         </div>
 

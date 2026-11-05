@@ -234,8 +234,8 @@ export function WithdrawDialog({
         <DialogHeader>
           <DialogTitle className="text-ivory">Request a withdrawal</DialogTitle>
           <DialogDescription className="text-[12px] leading-6 text-sage">
-            Limits, delays and guardian approval are applied by policy. Large or risky requests
-            queue instead of releasing immediately, and can be cancelled until execution.
+            Every withdrawal is queued for at least 10 minutes. Requests above the large or
+            cumulative threshold also need two guardian approvals. Nothing releases immediately.
           </DialogDescription>
         </DialogHeader>
 
@@ -355,10 +355,17 @@ export function WithdrawDialog({
                   <ShieldCheck className="size-3 text-mint" /> Applied policy
                 </div>
                 <p className="mt-1.5 text-[11px] leading-5 text-sage">
-                  Limit {policy.maxPerTransaction} ETH per transaction · delays above{" "}
-                  {policy.largeWithdrawalThreshold} ETH held {policy.delayMinutes} min
+                  Limit {policy.maxPerTransaction} ETH per transaction · {policy.rollingLimit ?? "2.5"}{" "}
+                  ETH per rolling 24 hours · delays above {policy.largeWithdrawalThreshold} ETH held{" "}
+                  {policy.delayMinutes} min · minimum delay 10 min
                   {policy.allowlistOnly ? " · allowlist-only destinations" : ""}.
                 </p>
+                {symbol !== "ETH" && (
+                  <p className="mt-1.5 text-[10px] leading-4 text-[#E9B45E]">
+                    {symbol} uses a separate test-token policy: 2,500 per transfer, 10,000 per
+                    24h, guardian approval above 500. ETH limits are never applied to token units.
+                  </p>
+                )}
               </div>
             )}
 

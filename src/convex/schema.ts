@@ -30,7 +30,13 @@ export const vaultStateValidator = v.union(
 );
 export type VaultState = Infer<typeof vaultStateValidator>;
 
-export const runModeValidator = v.union(v.literal("LIVE"), v.literal("DEMO"));
+export const runModeValidator = v.union(
+  v.literal("DEMO"),
+  v.literal("TESTNET"),
+  // Kept for older rows created before explicit TESTNET mode existed.
+  v.literal("LIVE"),
+);
+export type RunMode = Infer<typeof runModeValidator>;
 export const riskValidator = v.union(
   v.literal("LOW"),
   v.literal("MEDIUM"),
@@ -175,6 +181,10 @@ const schema = defineSchema(
       stateSource: eventSourceValidator,
       stateUpdatedAt: v.number(),
       monitoringEnabled: v.boolean(),
+      /** Mirrors the contract's epoch; bumped by recovery. */
+      securityEpoch: v.optional(v.number()),
+      /** Monitor address is public on-chain; stored only for live reads. */
+      monitorAddress: v.optional(v.string()),
       createdAt: v.number(),
       activatedAt: v.optional(v.number()),
       lastSyncedAt: v.number(),
@@ -200,6 +210,8 @@ const schema = defineSchema(
     withdrawalPolicies: defineTable({
       vaultId: v.id("vaults"),
       maxPerTransaction: v.string(),
+      /** 24-hour cumulative reservation budget, per asset policy. */
+      rollingLimit: v.optional(v.string()),
       delayMinutes: v.number(),
       largeWithdrawalThreshold: v.string(),
       guardianApprovalRequired: v.boolean(),
@@ -219,13 +231,21 @@ const schema = defineSchema(
       destination: v.string(),
       status: withdrawalStatusValidator,
       reason: v.string(),
+      requiresGuardians: v.optional(v.boolean()),
       requiredApprovals: v.number(),
       approvals: v.array(v.string()),
       createdAt: v.number(),
       executeAfter: v.number(),
+      expiresAt: v.optional(v.number()),
+      /** Demo security epoch, checked before release. */
+      epoch: v.optional(v.number()),
       finalizedAt: v.optional(v.number()),
       cancelReason: v.optional(v.string()),
       simulationRef: v.string(),
+      /** Always SIMULATED in demo; real hashes only from a receipt. */
+      txHash: v.optional(v.string()),
+      blockNumber: v.optional(v.number()),
+      confirmations: v.optional(v.number()),
     })
       .index("by_vault", ["vaultId"])
       .index("by_vault_status", ["vaultId", "status"]),
@@ -382,6 +402,11 @@ const schema = defineSchema(
       simulationRef: v.string(),
       /** Demo control used to exercise the failed-submission path. */
       simulatedFailure: v.optional(v.boolean()),
+      /** Only populated from a verified receipt, never from submission. */
+      txHash: v.optional(v.string()),
+      blockNumber: v.optional(v.number()),
+      confirmations: v.optional(v.number()),
+      chainId: v.optional(v.number()),
     })
       .index("by_vault", ["vaultId"])
       .index("by_incident", ["incidentId"]),
@@ -413,6 +438,14 @@ const schema = defineSchema(
       executeAfter: v.number(),
       completedAt: v.optional(v.number()),
       rejectionReason: v.optional(v.string()),
+      initiatedBy: v.optional(
+        v.union(v.literal("OWNER"), v.literal("GUARDIAN_SIMULATED")),
+      ),
+      proposerGuardianId: v.optional(v.id("guardians")),
+      cancelApprovals: v.optional(v.array(v.id("guardians"))),
+      priorState: v.optional(vaultStateValidator),
+      onChainTxHash: v.optional(v.string()),
+      epoch: v.optional(v.number()),
     }).index("by_vault", ["vaultId"]),
 
     guardianApprovals: defineTable({
@@ -467,6 +500,44 @@ const schema = defineSchema(
     })
       .index("by_network", ["network"])
       .index("by_service", ["service"]),
+
+    /**
+     * Timelocked security changes in DEMO mode. A weakening change needs two
+     * distinct confirmed guardians; all changes wait out the demo timelock.
+     * Only one proposal may be active per vault at a time.
+     */
+    securityProposals: defineTable({
+      vaultId: v.id("vaults"),
+      userId: v.id("users"),
+      kind: v.literal("WITHDRAWAL_POLICY"),
+      policy: v.object({
+        maxPerTransaction: v.string(),
+        rollingLimit: v.string(),
+        delayMinutes: v.number(),
+        largeWithdrawalThreshold: v.string(),
+        guardianThreshold: v.number(),
+        allowlistOnly: v.boolean(),
+        allowlist: v.array(v.string()),
+      }),
+      classification: v.union(
+        v.literal("WEAKENING"),
+        v.literal("STRENGTHENING"),
+        v.literal("NEUTRAL"),
+      ),
+      status: v.union(
+        v.literal("PENDING"),
+        v.literal("EXECUTED"),
+        v.literal("CANCELLED"),
+        v.literal("EXPIRED"),
+      ),
+      approvals: v.array(v.id("guardians")),
+      createdAt: v.number(),
+      executeAfter: v.number(),
+      executedAt: v.optional(v.number()),
+      cancelledAt: v.optional(v.number()),
+    })
+      .index("by_vault", ["vaultId"])
+      .index("by_vault_status", ["vaultId", "status"]),
 
     /** Ledger of vault-affecting activity, including security actions. */
     vaultTransactions: defineTable({

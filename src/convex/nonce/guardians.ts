@@ -1,7 +1,37 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { audit, notify, requireVaultOwner, userIdOrNull, getVaultForUser } from "./db";
-import { GUARDIAN_THRESHOLD, REQUIRED_GUARDIANS, isValidAddress, normalizeAddress } from "./shared";
+import {
+  GUARDIAN_THRESHOLD,
+  REQUIRED_GUARDIANS,
+  isValidAddress,
+  normalizeAddress,
+  parseUnits,
+} from "./shared";
+import type { Id } from "../_generated/dataModel";
+
+/** Guardian set edits are initial-setup only in the demo mirror. */
+async function assertUnfunded(
+  ctx: Parameters<typeof requireVaultOwner>[0],
+  vaultId: Id<"vaults">,
+): Promise<void> {
+  const assets = await ctx.db
+    .query("vaultAssets")
+    .withIndex("by_vault", (q) => q.eq("vaultId", vaultId))
+    .collect();
+  const hasBalance = assets.some(
+    (asset) => parseUnits(asset.balance, asset.decimals) > 0n,
+  );
+  const priorRequest = await ctx.db
+    .query("withdrawalRequests")
+    .withIndex("by_vault", (q) => q.eq("vaultId", vaultId))
+    .first();
+  if (hasBalance || priorRequest) {
+    throw new Error(
+      "Guardian changes after funding require the timelocked rotation procedure in the vault contract. The demo mirror blocks instant replacement.",
+    );
+  }
+}
 
 export const list = query({
   args: {},
@@ -35,12 +65,18 @@ export const add = mutation({
         "Guardian settings are frozen while the vault is locked down. Complete recovery first.",
       );
     }
+    await assertUnfunded(ctx, vault._id);
     if (!isValidAddress(args.address)) {
       throw new Error("Enter a valid EVM address for the guardian.");
     }
     const address = normalizeAddress(args.address);
-    if (address === normalizeAddress(vault.ownerSigner)) {
-      throw new Error("A guardian must be a different address from your vault signer.");
+    if (
+      address === normalizeAddress(vault.ownerSigner) ||
+      (vault.monitorAddress && address === normalizeAddress(vault.monitorAddress))
+    ) {
+      throw new Error(
+        "A guardian must be different from the vault signer and the monitor.",
+      );
     }
     const existing = await ctx.db
       .query("guardians")
@@ -95,6 +131,7 @@ export const confirm = mutation({
         "Live guardian confirmation requires a signed acceptance from the guardian wallet. That integration is not enabled in this build.",
       );
     }
+    await assertUnfunded(ctx, vault._id);
     await ctx.db.patch(guardian._id, {
       status: "CONFIRMED",
       confirmedAt: Date.now(),
@@ -132,6 +169,7 @@ export const remove = mutation({
     if (vault.state === "LOCKDOWN" || vault.state === "RECOVERY") {
       throw new Error("Guardians cannot be changed during lockdown or recovery.");
     }
+    await assertUnfunded(ctx, vault._id);
     const guardian = await ctx.db.get(args.guardianId);
     if (!guardian || guardian.vaultId !== vault._id) {
       throw new Error("Guardian not found on this vault.");

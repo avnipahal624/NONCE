@@ -55,6 +55,7 @@ export const seedDemoVault = mutation({
         stateSource: "SIMULATED",
         stateUpdatedAt: now,
         monitoringEnabled: true,
+        securityEpoch: 1,
         createdAt: now,
         activatedAt: now,
         lastSyncedAt: now,
@@ -74,6 +75,7 @@ export const seedDemoVault = mutation({
       await ctx.db.insert("withdrawalPolicies", {
         vaultId,
         maxPerTransaction: DEFAULT_POLICY.maxPerTransaction,
+        rollingLimit: DEFAULT_POLICY.rollingLimit,
         delayMinutes: DEFAULT_POLICY.delayMinutes,
         largeWithdrawalThreshold: DEFAULT_POLICY.largeWithdrawalThreshold,
         guardianApprovalRequired: true,

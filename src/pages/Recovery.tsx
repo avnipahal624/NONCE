@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
+import type { Doc } from "@/convex/_generated/dataModel";
 import { AppShell } from "@/components/nonce/AppShell";
 import { EmptyState, PageHeader, SectionLabel } from "@/components/nonce/PageHeader";
 import { StatusPill } from "@/components/nonce/StatusPill";
@@ -31,14 +32,18 @@ export default function Recovery() {
   const confirmGuardian = useMutation(api.nonce.guardians.confirm);
   const removeGuardian = useMutation(api.nonce.guardians.remove);
   const createProposal = useMutation(api.nonce.recovery.createProposal);
+  const proposeAsGuardian = useMutation(api.nonce.recovery.proposeAsGuardian);
   const approve = useMutation(api.nonce.recovery.simulateGuardianApproval);
   const execute = useMutation(api.nonce.recovery.execute);
   const reject = useMutation(api.nonce.recovery.reject);
+  const cancelProposal = useMutation(api.nonce.recovery.cancel);
 
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [replacement, setReplacement] = useState("");
+  const [proposerGuardianId, setProposerGuardianId] = useState("");
+  const [initiationMode, setInitiationMode] = useState<"GUARDIAN" | "OWNER">("GUARDIAN");
   const [newGuardian, setNewGuardian] = useState({ label: "", address: "" });
   const [showAdd, setShowAdd] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -112,8 +117,18 @@ export default function Recovery() {
   const handleCreateProposal = () =>
     run("propose", async () => {
       if (!isValidAddress(replacement)) throw new Error("Enter a valid replacement signer address.");
-      await createProposal({ vaultId: vault._id, replacementAddress: replacement.trim() });
+      if (initiationMode === "GUARDIAN") {
+        if (!proposerGuardianId) throw new Error("Choose the guardian opening recovery.");
+        await proposeAsGuardian({
+          vaultId: vault._id,
+          guardianId: proposerGuardianId as Doc<"guardians">["_id"],
+          replacementAddress: replacement.trim(),
+        });
+      } else {
+        await createProposal({ vaultId: vault._id, replacementAddress: replacement.trim() });
+      }
       setReplacement("");
+      setProposerGuardianId("");
     }, "Recovery proposal created. Two guardian approvals and the delay are required.");
 
   return (
@@ -122,7 +137,7 @@ export default function Recovery() {
         <PageHeader
           eyebrow="Recovery"
           title="Replace the key, keep the ownership"
-          description="Guardian recovery exists for compromise and for loss. It never bypasses the delay, and it never gives guardians custody of your assets."
+          description="Guardians can open recovery without the owner key. It freezes withdrawals, needs two distinct approvals and a delay, and never gives guardians custody of assets."
           actions={
             <>
               <StatusPill label={state.label} tone={state.tone} />
@@ -152,7 +167,7 @@ export default function Recovery() {
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-4">
                 {[
-                  { icon: Lock, label: "Confirmed lockdown", detail: "Recovery starts only from LOCKDOWN or RECOVERY." },
+                  { icon: Lock, label: "Freeze at proposal", detail: "Opening recovery freezes exits immediately." },
                   { icon: KeyRound, label: "New signer", detail: "Name an address that is not the compromised one." },
                   { icon: Users, label: "Two approvals", detail: "Distinct guardians approve the exact proposal." },
                   { icon: Clock, label: "Delay elapsed", detail: "The vault stays locked until execution." },
@@ -175,27 +190,45 @@ export default function Recovery() {
                 <span className="text-[10px] text-sage">{data.proposals.length} recorded</span>
               </div>
 
-              {!locked && !activeProposal && (
-                <div className="px-5 py-4">
-                  <p className="rounded-lg border border-hairline/60 bg-black/20 px-3.5 py-3 text-[11px] leading-5 text-sage">
-                    No confirmed lockdown is active, so there is nothing to recover. Guardian recovery
-                    is intentionally unavailable from a normal vault — a review action cannot unlock it
-                    either.
-                  </p>
-                  <p className="mt-3 text-[10px] leading-5 text-sage">
-                    To exercise the full path in this sandbox, produce a high-risk decoy signal from
-                    Protection and wait for the lockdown to confirm.
-                  </p>
-                </div>
-              )}
-
-              {locked && !activeProposal && (
+              {!activeProposal && (
                 <div className="border-b border-hairline/50 px-5 py-4">
                   <p className="text-[11px] leading-5 text-sage">
-                    The vault is {state.label.toLowerCase()}. Name a replacement signer you control. The
-                    compromised signer is not needed and will be revoked.
+                    {locked
+                      ? `The vault is ${state.label.toLowerCase()}. A replacement signer replaces the compromised one; the old signer is revoked and every old withdrawal is invalidated.`
+                      : "Open recovery when the signer is lost or compromised. Opening a proposal freezes withdrawals immediately; the old owner key is not required for the guardian path."}
                   </p>
-                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <div className="mt-3 flex gap-1.5 rounded-lg border border-hairline/60 bg-black/20 p-1">
+                    {(["GUARDIAN", "OWNER"] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setInitiationMode(mode)}
+                        className={cn(
+                          "flex-1 rounded-md px-2 py-1.5 text-[10px]",
+                          initiationMode === mode
+                            ? "bg-mint/[0.12] text-mint"
+                            : "text-sage hover:text-ivory",
+                        )}
+                      >
+                        {mode === "GUARDIAN" ? "Guardian-initiated" : "Owner-initiated"}
+                      </button>
+                    ))}
+                  </div>
+                  {initiationMode === "GUARDIAN" && (
+                    <select
+                      value={proposerGuardianId}
+                      onChange={(event) => setProposerGuardianId(event.target.value)}
+                      className="mt-2 h-9 w-full rounded-md border border-hairline bg-[#071310] px-2.5 text-[11px] text-ivory"
+                    >
+                      <option value="">Guardian opening recovery…</option>
+                      {confirmedGuardians.map((guardian) => (
+                        <option key={guardian._id} value={guardian._id}>
+                          {guardian.label} · {guardian.address.slice(0, 8)}…
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                     <Input
                       value={replacement}
                       onChange={(event) => setReplacement(event.target.value)}
@@ -212,11 +245,20 @@ export default function Recovery() {
                   </div>
                   <Button
                     onClick={handleCreateProposal}
-                    disabled={Boolean(busy) || replacement.trim().length === 0}
+                    disabled={
+                      Boolean(busy) ||
+                      replacement.trim().length === 0 ||
+                      (initiationMode === "GUARDIAN" && !proposerGuardianId)
+                    }
                     className="mt-2 h-9 rounded-lg bg-mint px-4 text-xs font-semibold text-[#04241a] hover:bg-mint-bright disabled:opacity-40"
                   >
-                    {busy === "propose" ? <Loader2 className="size-3.5 animate-spin" /> : "Start recovery proposal"}
+                    {busy === "propose" ? <Loader2 className="size-3.5 animate-spin" /> : "Open recovery proposal"}
                   </Button>
+                  <p className="mt-2 text-[9px] leading-4 text-[#E9B45E]">
+                    Demo guardian actions are recorded as simulated because sandbox guardians have
+                    no keys. On testnet the contract requires real guardian transactions. The owner
+                    cannot veto a guardian-initiated proposal; two guardians must cancel it.
+                  </p>
                 </div>
               )}
 
@@ -228,6 +270,15 @@ export default function Recovery() {
                       <StatusPill
                         label={incidentLabel(activeProposal.status)}
                         tone={activeProposal.status === "APPROVED" ? "safe" : "warn"}
+                        className="text-[9px]"
+                      />
+                      <StatusPill
+                        label={
+                          (activeProposal.initiatedBy ?? "OWNER") === "OWNER"
+                            ? "Owner-initiated"
+                            : "Guardian-initiated · simulated"
+                        }
+                        tone="neutral"
                         className="text-[9px]"
                       />
                     </div>
@@ -370,12 +421,48 @@ export default function Recovery() {
                       </Button>
                     )}
 
-                    {showReject ? (
+                    {(activeProposal.initiatedBy ?? "OWNER") === "GUARDIAN_SIMULATED" ? (
+                      <div className="flex flex-1 flex-wrap items-center gap-2">
+                        <span className="text-[10px] text-sage">
+                          Guardian cancellation {(activeProposal.cancelApprovals ?? []).length}/2
+                        </span>
+                        {confirmedGuardians
+                          .filter(
+                            (guardian) =>
+                              !(activeProposal.cancelApprovals ?? []).includes(
+                                guardian._id,
+                              ),
+                          )
+                          .map((guardian) => (
+                            <button
+                              key={guardian._id}
+                              type="button"
+                              onClick={() =>
+                                void run(
+                                  `cancel-${guardian._id}`,
+                                  async () => {
+                                    await cancelProposal({
+                                      vaultId: vault._id,
+                                      proposalId: activeProposal._id,
+                                      guardianId: guardian._id,
+                                    });
+                                  },
+                                  "Guardian cancellation vote recorded.",
+                                )
+                              }
+                              disabled={Boolean(busy)}
+                              className="rounded-md border border-[#F17676]/30 px-2.5 py-1.5 text-[10px] text-[#F17676] hover:bg-[#F17676]/10 disabled:opacity-40"
+                            >
+                              {guardian.label} cancels
+                            </button>
+                          ))}
+                      </div>
+                    ) : showReject ? (
                       <div className="flex flex-1 flex-col gap-1.5 sm:flex-row">
                         <Input
                           value={rejectReason}
                           onChange={(event) => setRejectReason(event.target.value)}
-                          placeholder="Reason for rejection"
+                          placeholder="Reason for cancellation"
                           className="h-9 border-hairline bg-black/25 text-[11px]"
                         />
                         <Button
@@ -391,14 +478,14 @@ export default function Recovery() {
                                 setShowReject(false);
                                 setRejectReason("");
                               },
-                              "Proposal rejected. The vault stays locked.",
+                              "Owner-initiated proposal cancelled; the previous vault state was restored.",
                             )
                           }
                           disabled={Boolean(busy) || rejectReason.trim().length < 4}
                           variant="outline"
                           className="h-9 rounded-lg border-[#F17676]/30 bg-transparent text-[10px] text-[#F17676] hover:bg-[#F17676]/10 disabled:opacity-40"
                         >
-                          Save rejection
+                          Save cancellation
                         </Button>
                       </div>
                     ) : (
@@ -407,7 +494,7 @@ export default function Recovery() {
                         onClick={() => setShowReject(true)}
                         className="text-[10px] text-sage hover:text-ivory"
                       >
-                        Reject proposal
+                        Cancel owner proposal
                       </button>
                     )}
                   </div>
@@ -554,7 +641,8 @@ export default function Recovery() {
 
               <p className="mt-3 text-[10px] leading-5 text-sage">
                 Sandbox guardians have no keys. Their approval is recorded as SIMULATED and cannot
-                satisfy a real signature requirement.
+                satisfy a real signature requirement. Guardian set edits are initial-setup only;
+                after funding, rotation must go through the contract's timelocked 2-of-3 process.
               </p>
             </div>
 
