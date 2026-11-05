@@ -25,6 +25,8 @@ import {
   approveTestnetRestoration,
   approveTestnetWithdrawal,
   cancelTestnetPolicy,
+  cancelTestnetRecovery,
+  cancelTestnetRestoration,
   cancelTestnetWithdrawal,
   connectTestnetWallet,
   depositTestnet,
@@ -1095,7 +1097,25 @@ export default function Testnet() {
                     >
                       Execute
                     </Button>
+                    <Button
+                      onClick={() =>
+                        void submit("cancel-recovery", () => {
+                          if (!account || !contract) throw new Error("Connect a wallet first.");
+                          return cancelTestnetRecovery(contract as ViemAddress, account);
+                        })
+                      }
+                      disabled={!account || Boolean(busy)}
+                      variant="ghost"
+                      className="h-8 shrink-0 rounded-md px-2 text-[10px] text-[#F17676] hover:bg-[#F17676]/10"
+                    >
+                      Cancel recovery
+                    </Button>
                   </div>
+                  <p className="mt-2 text-[9px] leading-4 text-sage">
+                    The owner can cancel an owner-initiated recovery. Guardians can cancel any
+                    recovery with two distinct cancel approvals; a guardian-initiated recovery
+                    cannot be cancelled by the owner alone.
+                  </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button
                       onClick={() =>
@@ -1109,6 +1129,19 @@ export default function Testnet() {
                       className="h-7 rounded-md px-2 text-[9px] text-sage hover:text-ivory"
                     >
                       Approve restoration
+                    </Button>
+                    <Button
+                      onClick={() =>
+                        void submit("cancel-restoration", () => {
+                          if (!account || !contract) throw new Error("Connect a wallet first.");
+                          return cancelTestnetRestoration(contract as ViemAddress, account);
+                        })
+                      }
+                      disabled={!account || Boolean(busy)}
+                      variant="ghost"
+                      className="h-7 rounded-md px-2 text-[9px] text-[#F17676] hover:bg-[#F17676]/10"
+                    >
+                      Cancel restoration
                     </Button>
                     <Button
                       onClick={() =>

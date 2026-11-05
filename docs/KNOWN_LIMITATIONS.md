@@ -114,8 +114,9 @@ audited, production-ready or fully tested.
 - **No backend contract writes.** Allowlist changes and guardian rotation are
   available in the contract ABI but not exposed as console forms. The console
   supports freeze, deposit, withdrawal request/approve/execute/cancel, policy
-  propose/approve/execute/cancel, recovery propose/approve/execute and
-  restoration propose/approve/execute. The backend does index confirmed logs.
+  propose/approve/execute/cancel, recovery propose/approve/execute/cancel and
+  restoration propose/approve/execute/cancel. The backend does index confirmed
+  logs.
 - **No guardian signature collection app.** Guardians must use a wallet and the
   console or another contract UI. There is no notification, approval link,
   hardware-wallet flow or transaction simulation before signing.

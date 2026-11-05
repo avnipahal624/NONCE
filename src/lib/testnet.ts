@@ -36,13 +36,6 @@ export const NONCE_TESTNET_ABI = [
   },
   {
     type: "function",
-    name: "cancelWithdrawal",
-    stateMutability: "nonpayable",
-    inputs: [{ name: "id", type: "uint256" }],
-    outputs: [],
-  },
-  {
-    type: "function",
     name: "freeze",
     stateMutability: "nonpayable",
     inputs: [],
@@ -118,6 +111,13 @@ export const NONCE_TESTNET_ABI = [
   },
   {
     type: "function",
+    name: "cancelRecovery",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "proposeRestoration",
     stateMutability: "nonpayable",
     inputs: [],
@@ -133,6 +133,13 @@ export const NONCE_TESTNET_ABI = [
   {
     type: "function",
     name: "executeRestoration",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "cancelRestoration",
     stateMutability: "nonpayable",
     inputs: [],
     outputs: [],
@@ -401,6 +408,20 @@ export async function executeTestnetRecovery(
   });
 }
 
+export async function cancelTestnetRecovery(
+  contract: Address,
+  account: Address,
+): Promise<Hash> {
+  await requireTestnetChain();
+  return walletFor(account).writeContract({
+    address: contract,
+    abi: NONCE_TESTNET_ABI,
+    functionName: "cancelRecovery",
+    account,
+    chain: baseSepolia,
+  });
+}
+
 export async function proposeTestnetRestoration(
   contract: Address,
   account: Address,
@@ -438,6 +459,20 @@ export async function executeTestnetRestoration(
     address: contract,
     abi: NONCE_TESTNET_ABI,
     functionName: "executeRestoration",
+    account,
+    chain: baseSepolia,
+  });
+}
+
+export async function cancelTestnetRestoration(
+  contract: Address,
+  account: Address,
+): Promise<Hash> {
+  await requireTestnetChain();
+  return walletFor(account).writeContract({
+    address: contract,
+    abi: NONCE_TESTNET_ABI,
+    functionName: "cancelRestoration",
     account,
     chain: baseSepolia,
   });

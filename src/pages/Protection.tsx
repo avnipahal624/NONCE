@@ -511,7 +511,7 @@ export default function Protection() {
             <div>
               <p className="text-[11px] font-medium text-ivory">Protection is simulated in this build</p>
               <p className="mt-0.5 text-[10px] leading-5 text-sage">
-                No live watcher, no deployed contract and no real assets. In production these states
+                No live watcher in this sandbox, no deployed contract and no real assets. In production these states
                 must be enforced on-chain, not only recorded here.
               </p>
             </div>

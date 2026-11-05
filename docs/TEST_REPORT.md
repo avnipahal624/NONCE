@@ -29,9 +29,11 @@ forge test -vv
 
 Result:
 
-- Build: successful.
-- Unit suite: **45 passed, 0 failed**.
-- Test file: `contracts/test/NONCEVault.t.sol`.
+- Build: successful. Runtime size 18,321 bytes; initcode 19,801 bytes.
+- `NONCEVault.t.sol`: **45 passed, 0 failed**.
+- The full `forge test -vv` command reported **46 passed, 0 failed**: the fork
+  test also ran because it falls back to the public RPC when the environment
+  variable is absent.
 - Invariant suite: 3 invariants, **256 runs / 128,000 calls / 0 reverts**.
 - Fuzz runs: 256 each for the configured fuzz tests.
 
