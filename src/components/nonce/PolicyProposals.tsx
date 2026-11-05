@@ -48,9 +48,11 @@ export function PolicyProposals({
     ? pending.classification !== "WEAKENING" || pending.approvals.length >= 2
     : false;
   const timeMet = pending ? now >= pending.executeAfter : false;
-  const canExecute = Boolean(pending && approvalsMet && timeMet && !frozen);
   const isExpired = Boolean(
     pending && now > pending.executeAfter + state.executionWindowMs,
+  );
+  const canExecute = Boolean(
+    pending && approvalsMet && timeMet && !frozen && !isExpired,
   );
 
   const run = async (id: string, fn: () => Promise<unknown>) => {
@@ -94,13 +96,13 @@ export function PolicyProposals({
               <span className="text-ivory">{pending.policy.rollingLimit} ETH</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-sage">Delay above</span>
+              <span className="text-sage">Large threshold</span>
               <span className="text-ivory">
                 {pending.policy.largeWithdrawalThreshold} ETH
               </span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-sage">Hold duration</span>
+              <span className="text-sage">Policy delay</span>
               <span className="text-ivory">{pending.policy.delayMinutes} min</span>
             </div>
             <div className="flex justify-between gap-3">

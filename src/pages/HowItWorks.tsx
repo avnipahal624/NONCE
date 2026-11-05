@@ -175,8 +175,8 @@ export default function HowItWorks() {
             <div className="mt-8 space-y-0">
               {[
                 { icon: FileSearch, title: "Authorize", body: "The vault signer is checked. A stolen session alone cannot submit a valid request." },
-                { icon: Activity, title: "Evaluate", body: "Limits, allowlists, delay thresholds and guardian requirements are applied by policy." },
-                { icon: Timer, title: "Hold", body: "Delayed requests enter a pending state. You can cancel; a confirmed lockdown cancels them automatically." },
+                { icon: Activity, title: "Evaluate", body: "Per-transaction, rolling 24-hour, allowlist and cumulative guardian rules are applied by policy." },
+                { icon: Timer, title: "Hold", body: "Every request enters a pending state for at least 10 minutes. You can cancel; a confirmed lockdown cancels it automatically." },
                 { icon: ShieldAlert, title: "Re-check at execution", body: "State, balance, approvals and lockdown status are re-verified immediately before release." },
                 { icon: Clock, title: "Settle", body: "Only a successful, confirmed execution is described as complete. Pending never reads as done." },
               ].map((step, index, all) => (

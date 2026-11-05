@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import {
   Activity,
   Bell,
+  FlaskConical,
   ChevronDown,
   LayoutDashboard,
   LogOut,
@@ -45,6 +46,7 @@ const NAV = [
   { label: "Protection", to: "/protection", icon: ShieldCheck },
   { label: "Activity", to: "/activity", icon: Activity },
   { label: "Recovery", to: "/recovery", icon: Users },
+  { label: "Testnet", to: "/testnet", icon: FlaskConical },
   { label: "Settings", to: "/settings", icon: SettingsIcon },
 ];
 

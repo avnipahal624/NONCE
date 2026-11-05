@@ -24,6 +24,7 @@ const Activity = lazy(() => import("./pages/Activity.tsx"));
 const IncidentDetail = lazy(() => import("./pages/IncidentDetail.tsx"));
 const Recovery = lazy(() => import("./pages/Recovery.tsx"));
 const Settings = lazy(() => import("./pages/Settings.tsx"));
+const Testnet = lazy(() => import("./pages/Testnet.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -199,6 +200,14 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <Protected>
                     <Settings />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/testnet"
+                element={
+                  <Protected>
+                    <Testnet />
                   </Protected>
                 }
               />

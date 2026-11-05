@@ -259,6 +259,18 @@ export const request = mutation({
       rules.decimals,
       now,
     );
+    const rollingLimitUnits = parseUnits(rules.rollingLimit, rules.decimals);
+    if (alreadySpent + amountUnits > rollingLimitUnits) {
+      await audit(ctx, {
+        userId,
+        vaultId: vault._id,
+        action: "WITHDRAWAL_REJECTED_ROLLING_LIMIT",
+        detail: `${args.amount} ${asset.symbol} would exceed the ${rules.rollingLimit} ${asset.symbol} 24-hour budget (${formatPolicyUnits(alreadySpent, rules.decimals)} already reserved or spent).`,
+      });
+      throw new Error(
+        `This request would exceed the ${rules.rollingLimit} ${asset.symbol} rolling 24-hour budget. Pending withdrawals already reserve part of it.`,
+      );
+    }
     const requiresGuardians =
       amountUnits >= parseUnits(rules.largeWithdrawalThreshold, rules.decimals) ||
       alreadySpent + amountUnits >=

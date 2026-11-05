@@ -486,9 +486,17 @@ contract NONCEVault {
         }
         if (address(this).balance < request.amount) revert InsufficientBalance();
 
-        // Consume the balance reservation but leave the rolling charge alive
-        // for the rest of the window, so executed spending still counts.
+        // Consume the balance reservation but keep the rolling charge. Timestamp
+        // it at execution so the 24-hour window measures actual spend, not how
+        // long the request sat in the queue.
         request.executed = true;
+        uint16 chargeSlotPlusOne = _withdrawalCharge[id];
+        if (chargeSlotPlusOne != 0) {
+            Charge storage executedCharge = _charges[chargeSlotPlusOne - 1];
+            if (executedCharge.withdrawalId == id) {
+                executedCharge.timestamp = uint64(block.timestamp);
+            }
+        }
         _releaseReservation(id, request.amount, false);
 
         (bool sent, ) = request.recipient.call{value: request.amount}("");
@@ -513,12 +521,17 @@ contract NONCEVault {
     }
 
     /// @dev Linear scan over a maximum of 64 slots: gas-bounded by design.
+    ///      A pending reservation's slot is never reused, even after its
+    ///      request-time charge would have aged out, because the request is
+    ///      still executable. Only zeroed (cancelled/expired) or executed
+    ///      charges older than the window are free.
     function _freeChargeSlot() internal view returns (uint16) {
         for (uint16 offset = 0; offset < MAX_CHARGES; offset++) {
             uint16 index = uint16((_chargeCursor + offset) % MAX_CHARGES);
             Charge storage charge = _charges[index];
+            if (charge.amount == 0) return index;
             if (
-                charge.amount == 0 ||
+                withdrawals[charge.withdrawalId].executed &&
                 uint256(charge.timestamp) + ROLLING_WINDOW <= block.timestamp
             ) {
                 return index;
@@ -544,11 +557,18 @@ contract NONCEVault {
         }
     }
 
+    /// @dev Pending requests reserve budget for as long as they remain
+    ///      executable. Executed spend counts for 24 hours from execution.
+    ///      Counting only request-time age would let an old pending request
+    ///      execute after its charge expired while new requests reused the
+    ///      same allowance.
     function _rollingSpent() internal view returns (uint256 spent) {
         for (uint16 i = 0; i < MAX_CHARGES; i++) {
             Charge storage charge = _charges[i];
-            if (
-                charge.amount != 0 &&
+            if (charge.amount == 0) continue;
+            if (!withdrawals[charge.withdrawalId].executed) {
+                spent += charge.amount;
+            } else if (
                 uint256(charge.timestamp) + ROLLING_WINDOW > block.timestamp
             ) {
                 spent += charge.amount;
@@ -1008,7 +1028,11 @@ contract NONCEVault {
     function executeRestoration() external {
         Restoration storage proposal = _restoration;
         if (!proposal.active) revert NoProposal();
+        if (!monitorFrozen) revert NotFrozen();
         if (block.timestamp < proposal.executeAfter) revert RecoveryDelayActive();
+        if (block.timestamp > uint256(proposal.executeAfter) + PROPOSAL_EXECUTION_WINDOW) {
+            revert ProposalExpired();
+        }
         if (proposal.approvals < GUARDIAN_THRESHOLD) revert ApprovalIncomplete();
 
         proposal.active = false;

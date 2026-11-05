@@ -1,68 +1,101 @@
 # NONCEVault reference contract
 
-`NONCEVault.sol` is a **reference implementation**, not a production system. It is
-not deployed, not audited, and the tests in `test/` have not been executed in this
-environment (no Foundry toolchain is installed). It exists so the off-chain design
-can be reviewed against a concrete on-chain model.
+`NONCEVault.sol` is a **hardened reference implementation**, not a production
+system. It is unaudited and **not deployed from this repository**. Its Foundry
+tests have **not been executed** here because no Foundry toolchain is installed.
+The source does compile with solc 0.8.24 and the optimizer (200 runs), but a
+compile is not a test or an audit.
+
+Full security context:
+
+- [`docs/SECURITY_ARCHITECTURE.md`](../docs/SECURITY_ARCHITECTURE.md)
+- [`docs/THREAT_MODEL.md`](../docs/THREAT_MODEL.md)
+- [`docs/TESTNET_DEPLOYMENT.md`](../docs/TESTNET_DEPLOYMENT.md)
+- [`docs/KNOWN_LIMITATIONS.md`](../docs/KNOWN_LIMITATIONS.md)
 
 ## What it enforces
 
-- A single vault signer queues withdrawals under a per-transaction limit.
-- Withdrawals at or above `largeWithdrawalThreshold` wait for `withdrawalDelay`
-  and require two of three guardian approvals.
-- An optional allowlist restricts recipients.
-- The monitor role can call `freeze()` and nothing else: no withdrawal, no policy
-  change, no unfreeze, no ownership change.
-- Recovery requires two guardian approvals and `recoveryDelay`. Execution replaces
-  the owner, clears the freeze and increments `epoch`, which invalidates every
-  withdrawal queued before containment.
-- ETH only. ERC-20 support, upgradeability and module execution are intentionally
-  absent from the reference.
+- A single owner queues every withdrawal; no withdrawal executes immediately.
+- Per-transaction limit, mandatory minimum delay (10 minutes), optional
+  allowlist.
+- Request-time balance and 24-hour rolling-limit reservations in a 64-slot ring.
+- Guardian quorum when a request is at/above the large threshold **or** when
+  cumulative spend in the window reaches it, closing the splitting attack.
+- Policy changes are always timelocked. A weakening change (higher limit, higher
+  large threshold, shorter delay, allowlist disabled) needs two guardian
+  approvals.
+- Immutable lower bounds: policy delay 1 day, recovery delay 2 days, withdrawal
+  delay 10 minutes. Constructor values must sit within 1–30 days / 2–90 days /
+  10 minutes–30 days.
+- Allowlist additions are immediate; removals are timelocked with two guardian
+  approvals. The last entry cannot be removed while allowlisting is on.
+- Guardian rotation is timelocked, needs two current guardian approvals, rejects
+  owner/monitor/existing-guardian/zero, and is blocked while frozen.
+- Monitor and owner can `freeze()`; the monitor cannot withdraw, unfreeze, change
+  policy, rotate guardians or approve recovery. Repeated freeze is a no-op.
+- Owner **or guardian** can propose recovery. A proposal freezes exits; the
+  proposer gets one approval; two approvals and `recoveryDelay` are required.
+  The owner can cancel only an owner-initiated proposal; two guardians can cancel
+  a guardian-initiated one.
+- Recovery increments `epoch`, revokes old withdrawals by epoch, resets
+  reservation accounting, clears both freeze sources and invalidates active
+  policy/allowlist/rotation/restoration proposals.
+- Guardian restoration clears a monitor freeze only, after `policyDelay` and two
+  approvals. The monitor cannot initiate, approve or execute it.
+- Reentrancy guard on request and execute; withdrawal state is finalized before
+  the external call.
 
 ## Deliberate omissions
 
-- No ERC-20 or NFT handling.
-- No guardian rotation, no ownership renouncing, no upgrade path.
-- No signature-based approvals: guardians transact directly.
-- No rate limiting beyond the per-transaction limit.
-- No front-running protection for freeze transactions; the delay is the defence.
+- ETH only: no ERC-20, NFT, upgrade, proxy, module or arbitrary call.
+- No `selfdestruct`, admin sweep or emergency bypass.
+- No configurable guardian count/threshold beyond three-of-which-two.
+- No ERC-1271 or EIP-712 guardian signatures; guardians transact directly.
+- No batching, meta-transactions or relayer.
+- No keeper for expiry cleanup; `cancelExpired` is permissionless.
+- No formal verification, fuzzing run, invariant run or independent audit.
 
 ## Local build and tests
 
 ```bash
-# from the repository root
+# from the repository root, without Foundry:
+bunx solc@0.8.24 --optimize --optimize-runs 200 \
+  --bin contracts/NONCEVault.sol -o /tmp/nonce-solc
+
+# with Foundry:
 cd contracts
 forge install foundry-rs/forge-std --no-commit
 forge build
 forge test -vvv
 ```
 
-Expected coverage of the reference tests: immediate small withdrawals, delayed large
-withdrawals with duplicate-approval rejection, freeze semantics and the absence of an
-unfreeze path, recovery threshold and delay, epoch invalidation of queued withdrawals,
-allowlist rejection and non-guardian rejection.
+The test suite covers immediate delays, rolling/splitting, reservations, policy
+timelock and quorum, weakening classification, allowlist removal, guardian
+rotation, guardian-initiated recovery, cancellation rules, epoch invalidation,
+freeze/restoration, monitor restrictions, reentrancy, fuzzed amounts and an
+invariant handler. **None of it has been executed here.**
 
 ## Base Sepolia deployment
 
-1. Copy the variables below into your shell (never commit them):
+The deploy script requires the constructor's new arguments. See
+[`docs/TESTNET_DEPLOYMENT.md`](../docs/TESTNET_DEPLOYMENT.md) for the complete
+checklist. At minimum:
 
 ```bash
 export BASE_SEPOLIA_RPC_URL="https://sepolia.base.org"
-export DEPLOYER_PRIVATE_KEY="0x..."        # funded deployer, not the vault owner key
-export VAULT_OWNER="0x..."                 # the signer the vault will protect
-export NONCE_MONITOR="0x..."               # narrowly scoped freeze key
+export DEPLOYER_PRIVATE_KEY="0x..."        # funded deployer, not the owner
+export VAULT_OWNER="0x..."                 # signer the vault protects
+export NONCE_MONITOR="0x..."               # freeze-only key
 export GUARDIAN_ONE="0x..."
 export GUARDIAN_TWO="0x..."
 export GUARDIAN_THREE="0x..."
-export PER_TX_LIMIT_WEI="500000000000000000"        # 0.5 ETH
-export LARGE_THRESHOLD_WEI="100000000000000000"     # 0.1 ETH
-export WITHDRAWAL_DELAY_SECONDS="1800"              # 30 minutes
+export PER_TX_LIMIT_WEI="100000000000000000"        # 0.1 ETH
+export LARGE_THRESHOLD_WEI="20000000000000000"      # 0.02 ETH
+export ROLLING_LIMIT_WEI="300000000000000000"       # 0.3 ETH / 24h
+export WITHDRAWAL_DELAY_SECONDS="1800"              # 30 min
 export RECOVERY_DELAY_SECONDS="172800"              # 2 days
-```
+export POLICY_DELAY_SECONDS="86400"                 # 1 day
 
-2. Simulate, then broadcast:
-
-```bash
 forge script script/Deploy.s.sol:DeployNONCEVault \
   --rpc-url "$BASE_SEPOLIA_RPC_URL" \
   --private-key "$DEPLOYER_PRIVATE_KEY"
@@ -73,10 +106,12 @@ forge script script/Deploy.s.sol:DeployNONCEVault \
   --broadcast --verify --etherscan-api-key "$BASESCAN_API_KEY"
 ```
 
-3. Verify on Basescan, then record the address in the deployment notes. The app does
-   **not** currently write a real contract address: the sandbox vault is simulated.
-   Wiring a deployed address would require replacing the simulated execution layer and
-   adding a monitor worker that calls `freeze()` on verified high-risk evidence.
+After deployment, set the Convex environment values (`NONCE_VAULT_ADDRESS`,
+`NONCE_CHAIN_ID=84532`, `BASE_SEPOLIA_RPC_URL`, `NONCE_DEPLOYMENT_TX_HASH`,
+optionally `NONCE_CONTRACT_VERIFIED=true`). Open `/testnet` and confirm the live
+state, then run the negative checks in the deployment guide. Do not set the
+verified flag until Basescan confirms the source.
 
-4. Do not fund the vault with assets you are not prepared to lose. This contract has
-   not been reviewed by a third party.
+Do not fund the vault with assets you are not prepared to lose. This contract has
+not been reviewed by a third party, its test suite has not run in this
+environment, and there is no deployment from this repository.

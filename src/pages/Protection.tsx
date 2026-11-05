@@ -498,7 +498,7 @@ export default function Protection() {
               </div>
               <p className="mt-1.5 text-[11px] leading-5 text-sage">
                 {policy
-                  ? `${policy.delayMinutes} minute delay above ${policy.largeWithdrawalThreshold} ETH · limit ${policy.maxPerTransaction} ETH per transaction.`
+                  ? `${policy.maxPerTransaction} ETH per transaction · ${policy.rollingLimit ?? "2.5"} ETH per rolling 24h · every withdrawal waits at least 10 minutes · ${policy.largeWithdrawalThreshold} ETH cumulative gate for 2-of-3 guardians.`
                   : "No policy configured."}
               </p>
             </div>

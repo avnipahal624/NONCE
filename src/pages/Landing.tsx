@@ -161,7 +161,7 @@ export default function Landing() {
             <div className="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t border-hairline/60 pt-6">
               {[
                 { value: "2-of-3", label: "guardian recovery" },
-                { value: "30 min", label: "default withdrawal delay" },
+                { value: "10 min", label: "minimum withdrawal delay" },
                 { value: "0", label: "private keys held" },
               ].map((item) => (
                 <div key={item.label}>
@@ -181,7 +181,7 @@ export default function Landing() {
             <VaultDial />
 
             <div className="absolute -left-2 top-[16%] hidden rounded-xl border border-hairline/80 bg-[#081914]/90 px-3.5 py-2.5 backdrop-blur-md sm:block">
-              <p className="text-[9px] uppercase tracking-[0.18em] text-sage">Protected core</p>
+              <p className="text-[9px] uppercase tracking-[0.18em] text-sage">Enforced core</p>
               <p className="mt-1 flex items-center gap-1.5 text-[11px] text-mint">
                 <Lock className="size-3" /> Policy enforced
               </p>
@@ -270,7 +270,7 @@ export default function Landing() {
             />
             <ul className="mt-8 space-y-3">
               <CheckLine>Per-transaction limits and recipient restrictions</CheckLine>
-              <CheckLine>Large withdrawals held in a cancellable pending state</CheckLine>
+              <CheckLine>Every withdrawal held in a cancellable pending state</CheckLine>
               <CheckLine>Lockdown blocks withdrawals and dangerous permission changes</CheckLine>
               <CheckLine>A monitoring outage never silently widens access</CheckLine>
             </ul>
@@ -300,12 +300,12 @@ export default function Landing() {
                   },
                   {
                     title: "Policy evaluated inside the vault",
-                    detail: "Above the 0.1 ETH threshold, so a delay and guardian approvals apply.",
+                    detail: "Every request has a delay; at or above 0.1 ETH, two guardian approvals also apply.",
                     state: "Done",
                     tone: "safe" as const,
                   },
                   {
-                    title: "30-minute security window",
+                    title: "Security window · policy delay",
                     detail: "You can cancel. Monitoring continues. A confirmed lockdown also cancels it.",
                     state: "Active",
                     tone: "warn" as const,
@@ -559,7 +559,7 @@ export default function Landing() {
         <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <SectionHead
             eyebrow="Simple onboarding"
-            title="Protected in"
+            title="Guarded in"
             accent="four short steps."
             description="No seed phrases. No private keys sent anywhere. Non-technical labels first, with technical detail available when you want it."
           />

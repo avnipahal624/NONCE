@@ -217,12 +217,18 @@ export function rollingSpentUnits(
   now: number,
 ): bigint {
   return requests
-    .filter(
-      (request) =>
-        request.symbol === symbol &&
-        !["CANCELLED", "BLOCKED", "FAILED"].includes(request.status) &&
-        (request.finalizedAt ?? request.createdAt) > now - ROLLING_WINDOW_MS,
-    )
+    .filter((request) => {
+      if (request.symbol !== symbol) return false;
+      if (["CANCELLED", "BLOCKED", "FAILED"].includes(request.status)) {
+        return false;
+      }
+      // Pending requests reserve budget for as long as they can still execute,
+      // even after their original request timestamp is older than 24 hours.
+      // Counting only recent requests would let an old pending request execute
+      // while a new request reuses the same allowance.
+      if (PENDING_STATUSES.includes(request.status)) return true;
+      return (request.finalizedAt ?? request.createdAt) > now - ROLLING_WINDOW_MS;
+    })
     .reduce(
       (total, request) => total + parseUnits(request.amount, decimals),
       0n,

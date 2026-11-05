@@ -50,6 +50,53 @@ export const NONCE_TESTNET_ABI = [
   },
   {
     type: "function",
+    name: "cancelWithdrawal",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "id", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "proposePolicy",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "next",
+        type: "tuple",
+        components: [
+          { name: "perTransactionLimit", type: "uint256" },
+          { name: "largeWithdrawalThreshold", type: "uint256" },
+          { name: "rollingLimit", type: "uint256" },
+          { name: "withdrawalDelay", type: "uint64" },
+          { name: "allowlistOnly", type: "bool" },
+        ],
+      },
+    ],
+    outputs: [{ name: "nonce", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "approvePolicy",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "executePolicy",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "cancelPolicy",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "proposeRecovery",
     stateMutability: "nonpayable",
     inputs: [{ name: "newOwner", type: "address" }],
@@ -123,6 +170,16 @@ export async function connectTestnetWallet(): Promise<Address> {
   return accounts[0] as Address;
 }
 
+async function requireTestnetChain(): Promise<void> {
+  const provider = ethereum();
+  const chainIdHex = (await provider.request({ method: "eth_chainId" })) as string;
+  if (Number.parseInt(chainIdHex, 16) !== TESTNET_CHAIN_ID) {
+    throw new Error(
+      `Your wallet is on chain ${Number.parseInt(chainIdHex, 16)}. Switch to Base Sepolia (84532) before sending.`,
+    );
+  }
+}
+
 function walletFor(account: Address) {
   return createWalletClient({
     account,
@@ -138,6 +195,7 @@ export async function depositTestnet(
 ): Promise<Hash> {
   const value = parseEther(amountEth);
   if (value <= 0n) throw new Error("Enter a positive testnet ETH amount.");
+  await requireTestnetChain();
   return walletFor(account).sendTransaction({
     account,
     chain: baseSepolia,
@@ -152,6 +210,7 @@ export async function requestTestnetWithdrawal(
   recipient: Address,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -167,6 +226,7 @@ export async function approveTestnetWithdrawal(
   id: number,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -182,6 +242,7 @@ export async function executeTestnetWithdrawal(
   id: number,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -192,10 +253,101 @@ export async function executeTestnetWithdrawal(
   });
 }
 
+export async function cancelTestnetWithdrawal(
+  contract: Address,
+  id: number,
+  account: Address,
+): Promise<Hash> {
+  await requireTestnetChain();
+  return walletFor(account).writeContract({
+    address: contract,
+    abi: NONCE_TESTNET_ABI,
+    functionName: "cancelWithdrawal",
+    args: [BigInt(id)],
+    account,
+    chain: baseSepolia,
+  });
+}
+
+export type TestnetPolicyInput = {
+  perTransactionLimitEth: string;
+  largeWithdrawalThresholdEth: string;
+  rollingLimitEth: string;
+  withdrawalDelayMinutes: number;
+  allowlistOnly: boolean;
+};
+
+export async function proposeTestnetPolicy(
+  contract: Address,
+  input: TestnetPolicyInput,
+  account: Address,
+): Promise<Hash> {
+  await requireTestnetChain();
+  return walletFor(account).writeContract({
+    address: contract,
+    abi: NONCE_TESTNET_ABI,
+    functionName: "proposePolicy",
+    args: [
+      {
+        perTransactionLimit: parseEther(input.perTransactionLimitEth),
+        largeWithdrawalThreshold: parseEther(input.largeWithdrawalThresholdEth),
+        rollingLimit: parseEther(input.rollingLimitEth),
+        withdrawalDelay: BigInt(Math.round(input.withdrawalDelayMinutes * 60)),
+        allowlistOnly: input.allowlistOnly,
+      },
+    ],
+    account,
+    chain: baseSepolia,
+  });
+}
+
+export async function approveTestnetPolicy(
+  contract: Address,
+  account: Address,
+): Promise<Hash> {
+  await requireTestnetChain();
+  return walletFor(account).writeContract({
+    address: contract,
+    abi: NONCE_TESTNET_ABI,
+    functionName: "approvePolicy",
+    account,
+    chain: baseSepolia,
+  });
+}
+
+export async function executeTestnetPolicy(
+  contract: Address,
+  account: Address,
+): Promise<Hash> {
+  await requireTestnetChain();
+  return walletFor(account).writeContract({
+    address: contract,
+    abi: NONCE_TESTNET_ABI,
+    functionName: "executePolicy",
+    account,
+    chain: baseSepolia,
+  });
+}
+
+export async function cancelTestnetPolicy(
+  contract: Address,
+  account: Address,
+): Promise<Hash> {
+  await requireTestnetChain();
+  return walletFor(account).writeContract({
+    address: contract,
+    abi: NONCE_TESTNET_ABI,
+    functionName: "cancelPolicy",
+    account,
+    chain: baseSepolia,
+  });
+}
+
 export async function freezeTestnetVault(
   contract: Address,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -210,6 +362,7 @@ export async function proposeTestnetRecovery(
   replacement: Address,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -224,6 +377,7 @@ export async function approveTestnetRecovery(
   contract: Address,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -237,6 +391,7 @@ export async function executeTestnetRecovery(
   contract: Address,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -250,6 +405,7 @@ export async function proposeTestnetRestoration(
   contract: Address,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -263,6 +419,7 @@ export async function approveTestnetRestoration(
   contract: Address,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,
@@ -276,6 +433,7 @@ export async function executeTestnetRestoration(
   contract: Address,
   account: Address,
 ): Promise<Hash> {
+  await requireTestnetChain();
   return walletFor(account).writeContract({
     address: contract,
     abi: NONCE_TESTNET_ABI,

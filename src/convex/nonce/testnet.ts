@@ -56,7 +56,10 @@ function clientFor(chainId: number) {
  */
 export const readVault = action({
   args: { withdrawalId: v.optional(v.number()) },
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
+    if (!(await ctx.auth.getUserIdentity())) {
+      throw new Error("Sign in to read the testnet vault.");
+    }
     const config = readTestnetConfig();
     if (!config.configured || !config.contractAddress) {
       return {
@@ -282,7 +285,10 @@ export const readVault = action({
  */
 export const verifyTransaction = action({
   args: { txHash: v.string() },
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
+    if (!(await ctx.auth.getUserIdentity())) {
+      throw new Error("Sign in to verify a testnet transaction.");
+    }
     if (!/^0x[a-fA-F0-9]{64}$/.test(args.txHash)) {
       throw new Error("Enter a 32-byte transaction hash.");
     }
@@ -349,7 +355,10 @@ export const verifyTransaction = action({
 
 export const readGuardianSet = action({
   args: {},
-  handler: async () => {
+  handler: async (ctx) => {
+    if (!(await ctx.auth.getUserIdentity())) {
+      throw new Error("Sign in to read the testnet guardian set.");
+    }
     const config = readTestnetConfig();
     if (!config.configured || !config.contractAddress) return null;
     if (!isAddress(config.contractAddress)) return null;

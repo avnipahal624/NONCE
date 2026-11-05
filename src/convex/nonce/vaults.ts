@@ -96,7 +96,7 @@ function buildProtection(args: {
           ? "OK"
           : "MISSING",
       detail: policy
-        ? `${policy.maxPerTransaction} ETH per transfer, ${policy.rollingLimit ?? "missing"} ETH per 24h, ${policy.delayMinutes}-minute delay above ${policy.largeWithdrawalThreshold} ETH, ${policy.guardianThreshold}-of-3 approvals.`
+        ? `${policy.maxPerTransaction} ETH per transfer, ${policy.rollingLimit ?? "missing"} ETH per 24h, minimum 10-minute delay on every request, ${policy.delayMinutes}-minute policy delay at/above ${policy.largeWithdrawalThreshold} ETH cumulative, ${policy.guardianThreshold}-of-3 approvals.`
         : "No withdrawal policy has been set.",
     },
     {

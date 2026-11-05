@@ -236,6 +236,38 @@ contract NONCEVaultTest is Test {
         vault.requestWithdrawal(0.4 ether, recipient);
     }
 
+    function testAgedPendingReservationStillConsumesTheRollingBudget() public {
+        // Five pending requests reserve 2 ETH. After the request-time charge
+        // would have aged out, those requests are still executable, so their
+        // budget must not be reusable.
+        for (uint256 i = 0; i < 5; i++) {
+            vm.prank(owner);
+            vault.requestWithdrawal(0.4 ether, recipient);
+        }
+        vm.warp(block.timestamp + 25 hours);
+
+        for (uint256 i = 0; i < 7; i++) {
+            vm.prank(owner);
+            vault.requestWithdrawal(0.4 ether, recipient);
+        }
+        assertEq(vault.getRollingSpent(), 4.8 ether);
+
+        vm.prank(owner);
+        vm.expectRevert(NONCEVault.RollingLimitExceeded.selector);
+        vault.requestWithdrawal(0.4 ether, recipient);
+    }
+
+    function testExecutedChargeStartsItsWindowAtExecution() public {
+        vm.prank(owner);
+        uint256 id = vault.requestWithdrawal(0.4 ether, recipient);
+        vm.warp(block.timestamp + 25 hours);
+        vault.executeWithdrawal(id);
+
+        assertEq(vault.getRollingSpent(), 0.4 ether);
+        vm.warp(block.timestamp + 24 hours + 1);
+        assertEq(vault.getRollingSpent(), 0);
+    }
+
     function testCancellationReleasesRollingAndBalanceReservations() public {
         uint256[] memory ids = new uint256[](12);
         for (uint256 i = 0; i < 12; i++) {
@@ -535,13 +567,25 @@ contract NONCEVaultTest is Test {
         vm.prank(guardianOne);
         vault.proposeRecovery(address(0xDEAD));
 
-        vm.warp(block.timestamp + RECOVERY_DELAY);
-        vm.expectRevert(NONCEVault.ApprovalIncomplete.selector);
+        // One approval is not enough, and the delay has not elapsed yet. The
+        // contract checks the delay first, so this must be RecoveryDelayActive.
+        vm.expectRevert(NONCEVault.RecoveryDelayActive.selector);
         vault.executeRecovery();
 
         vm.prank(guardianTwo);
         vault.approveRecovery();
-        vm.expectRevert(NONCEVault.RecoveryDelayActive.selector);
+
+        vm.warp(block.timestamp + RECOVERY_DELAY);
+        vault.executeRecovery();
+        assertEq(vault.owner(), address(0xDEAD));
+    }
+
+    function testRecoveryCannotExecuteWithOneApprovalAfterDelay() public {
+        vm.prank(guardianOne);
+        vault.proposeRecovery(address(0xDEAD));
+
+        vm.warp(block.timestamp + RECOVERY_DELAY);
+        vm.expectRevert(NONCEVault.ApprovalIncomplete.selector);
         vault.executeRecovery();
     }
 
@@ -702,6 +746,22 @@ contract NONCEVaultTest is Test {
         assertFalse(vault.frozen());
         assertEq(vault.owner(), owner);
         assertEq(vault.epoch(), 1);
+    }
+
+    function testRestorationProposalExpires() public {
+        vm.prank(monitor);
+        vault.freeze();
+        vm.prank(owner);
+        vault.proposeRestoration();
+
+        vm.warp(block.timestamp + POLICY_DELAY + vault.PROPOSAL_EXECUTION_WINDOW() + 1);
+        vm.prank(guardianOne);
+        vault.approveRestoration();
+        vm.prank(guardianTwo);
+        vault.approveRestoration();
+
+        vm.expectRevert(NONCEVault.ProposalExpired.selector);
+        vault.executeRestoration();
     }
 
     /* -------------------------- guardian rotation ---------------------- */

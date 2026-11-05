@@ -192,7 +192,7 @@ export default function Onboarding() {
       if (!Number.isFinite(max) || max <= 0) throw new Error("Enter a positive per-transaction limit.");
       if (!Number.isFinite(threshold) || threshold <= 0) throw new Error("Enter a positive large-withdrawal threshold.");
       if (threshold > max) throw new Error("The large-withdrawal threshold cannot exceed the per-transaction limit.");
-      if (policy.delayMinutes < 1) throw new Error("A delay of at least one minute is required.");
+      if (policy.delayMinutes < 10) throw new Error("Every withdrawal has a minimum 10-minute delay.");
       if (policy.allowlistOnly) {
         const entries = policy.allowlist.split(",").map((value) => value.trim()).filter(Boolean);
         if (entries.length === 0) throw new Error("Add at least one allowlisted address, or turn allowlist-only off.");
@@ -530,8 +530,8 @@ export default function Onboarding() {
                     <div className="rounded-xl border border-mint/25 bg-mint/[0.04] p-4">
                       <p className="text-[10px] uppercase tracking-[0.16em] text-mint">NONCE vault</p>
                       <ul className="mt-3 space-y-2 text-[11px] leading-5 text-ivory/80">
-                        <li>Large withdrawals wait in a cancellable queue</li>
-                        <li>Two of three guardians approve signer replacement</li>
+                        <li>Every withdrawal waits in a cancellable queue</li>
+                        <li>Large or cumulative requests need two guardians</li>
                         <li>Decoys expose intrusion attempts early</li>
                       </ul>
                     </div>
@@ -597,7 +597,7 @@ export default function Onboarding() {
                         className="h-10 border-hairline bg-black/25 text-sm"
                       />
                     </Field>
-                    <Field label="Large-withdrawal threshold (ETH)" hint="Above this, the delay applies.">
+                    <Field label="Large-withdrawal threshold (ETH)" hint="At or above this, two guardian approvals are required.">
                       <Input
                         value={policy.largeWithdrawalThreshold}
                         onChange={(event) => setPolicy({ ...policy, largeWithdrawalThreshold: event.target.value })}
@@ -605,10 +605,10 @@ export default function Onboarding() {
                         className="h-10 border-hairline bg-black/25 text-sm"
                       />
                     </Field>
-                    <Field label="Delay (minutes)" hint="Pending requests can be cancelled during this window.">
+                    <Field label="Delay (minutes)" hint="At least 10 minutes. Pending requests can be cancelled during this window.">
                       <Input
                         type="number"
-                        min={1}
+                        min={10}
                         max={1440}
                         value={policy.delayMinutes}
                         onChange={(event) => setPolicy({ ...policy, delayMinutes: Number(event.target.value) })}

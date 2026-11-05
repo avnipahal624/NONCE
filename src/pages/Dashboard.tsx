@@ -266,8 +266,10 @@ export default function Dashboard() {
               to: "/vault",
               icon: Lock,
               label: "Withdrawal guard",
-              value: policy ? `${policy.delayMinutes} min delay` : "Not set",
-              detail: policy ? `Limit ${policy.maxPerTransaction} ETH per transaction` : "Set a policy",
+              value: policy ? "≥10 min on every request" : "Not set",
+              detail: policy
+                ? `${policy.maxPerTransaction} ETH per tx · ${policy.rollingLimit ?? "2.5"} ETH per 24h`
+                : "Set a policy",
             },
             {
               to: "/protection#decoys",

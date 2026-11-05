@@ -81,6 +81,21 @@ export default function VaultPage() {
     (request) => !["QUEUED", "AWAITING_GUARDIANS", "READY"].includes(request.status),
   );
   const confirmedGuardians = workspace.guardians.filter((guardian) => guardian.status === "CONFIRMED");
+  const now = Date.now();
+  const ethSpent24h = (withdrawals ?? [])
+    .filter((request) => {
+      if (request.symbol !== "ETH") return false;
+      if (["CANCELLED", "BLOCKED", "FAILED"].includes(request.status)) return false;
+      if (["QUEUED", "AWAITING_GUARDIANS", "READY"].includes(request.status)) {
+        return true;
+      }
+      return (request.finalizedAt ?? request.createdAt) > now - 24 * 60 * 60 * 1000;
+    })
+    .reduce((total, request) => total + Number(request.amount), 0);
+  const ethReserved = pending
+    .filter((request) => request.symbol === "ETH")
+    .reduce((total, request) => total + Number(request.amount), 0);
+  const rollingRemaining = Math.max(0, Number(policy?.rollingLimit ?? "2.5") - ethSpent24h);
 
   const run = async (id: string, fn: () => Promise<unknown>) => {
     setBusy(id);
@@ -190,8 +205,12 @@ export default function VaultPage() {
               {[
                 { label: "Per-transaction limit", value: `${policy?.maxPerTransaction ?? "—"} ETH` },
                 { label: "Rolling 24-hour limit", value: `${policy?.rollingLimit ?? "2.5"} ETH` },
-                { label: "Delay above", value: `${policy?.largeWithdrawalThreshold ?? "—"} ETH` },
-                { label: "Hold duration", value: `${policy?.delayMinutes ?? 0} minutes` },
+                { label: "Used in last 24h", value: `${ethSpent24h.toFixed(4)} ETH` },
+                { label: "Rolling remaining", value: `${rollingRemaining.toFixed(4)} ETH` },
+                { label: "Reserved for pending", value: `${ethReserved.toFixed(4)} ETH` },
+                { label: "Large threshold", value: `${policy?.largeWithdrawalThreshold ?? "—"} ETH` },
+                { label: "Guardian gate", value: "At/above threshold or cumulative" },
+                { label: "Hold duration", value: `${policy?.delayMinutes ?? 0} min above threshold` },
                 { label: "Minimum delay", value: "10 minutes on every request" },
                 { label: "Guardian approval", value: "2 of 3 required" },
                 { label: "Allowlist only", value: policy?.allowlistOnly ? `${policy.allowlist.length} saved addresses` : "Off" },

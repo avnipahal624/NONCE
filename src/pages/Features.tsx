@@ -31,7 +31,7 @@ const GROUPS = [
       {
         icon: Landmark,
         title: "Policy-enforcing vault",
-        body: "Per-transaction limits, delayed large withdrawals, recipient allowlists and cancelling pending requests before settlement.",
+        body: "Per-transaction limits, a rolling 24-hour budget, a minimum delay on every withdrawal, recipient allowlists and cancellation before settlement.",
         badge: "Sandbox state machine",
       },
       {

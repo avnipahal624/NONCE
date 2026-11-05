@@ -4,17 +4,28 @@ NONCE is a consumer security layer for a self-custodial wallet: withdrawal limit
 and delays, decoy-based intrusion evidence, an explicit lockdown state machine and
 two-of-three guardian recovery.
 
-**This build is a sandbox demonstration.** No contract is deployed, no RPC watcher
-is running, no real funds are involved, and every execution path is labelled
-`SIMULATED`. Do not send real assets.
+**This build is a hardened sandbox plus a Base Sepolia console.** The reference
+contract is unaudited and **no contract is deployed from this repository**. Demo
+balances, transfers and guardian approvals are simulated. The `/testnet` console
+reads live state and submits wallet-signed transactions only when deployment
+configuration exists; otherwise it shows blockers. No mainnet path exists. Do not
+send real assets.
 
 - Product, architecture, schema and runbook: [`docs/NONCE.md`](docs/NONCE.md)
+- Security findings and remediation: [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md)
+- Enforcement boundaries: [`docs/SECURITY_ARCHITECTURE.md`](docs/SECURITY_ARCHITECTURE.md)
+- Threats and residual risk: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
+- Deployment and verification: [`docs/TESTNET_DEPLOYMENT.md`](docs/TESTNET_DEPLOYMENT.md)
+- What is not done or tested: [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md)
 - Reference Solidity vault and deployment steps: [`contracts/README.md`](contracts/README.md)
 - App routes: `/` marketing, `/auth`, `/onboarding`, `/dashboard`, `/vault`,
-  `/protection`, `/activity`, `/recovery`, `/settings`
+  `/protection`, `/activity`, `/recovery`, `/testnet`, `/settings`
 
 Commands: `bun convex dev --once` (codegen + function push), `bun tsc -b --noEmit`
-(typecheck). The platform runs both after each change; do not start dev servers.
+(typecheck), `bun test tests/policyRules.test.ts` (8 backend policy tests). The
+platform runs codegen and typecheck after each change; do not start dev servers.
+Contract checks require Foundry, which is not installed here; see the deployment
+guide and limitations before claiming any on-chain result.
 
 ---
 
