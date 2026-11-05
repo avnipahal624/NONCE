@@ -10,16 +10,24 @@ import {NONCEVault} from "../NONCEVault.sol";
  * environment and never committed.
  *
  * Required values:
- *  - DEPLOYER_PRIVATE_KEY, VAULT_OWNER, NONCE_MONITOR
+ *  - VAULT_OWNER, NONCE_MONITOR
  *  - GUARDIAN_ONE..THREE (distinct, not owner or monitor)
  *  - PER_TX_LIMIT_WEI, LARGE_THRESHOLD_WEI, ROLLING_LIMIT_WEI
  *  - WITHDRAWAL_DELAY_SECONDS (>= 600)
  *  - RECOVERY_DELAY_SECONDS (>= 172800)
  *  - POLICY_DELAY_SECONDS (>= 86400)
+ *
+ * Signing (choose one):
+ *  - DEPLOYER_PRIVATE_KEY for a local simulation only, or
+ *  - `forge script ... --account <keystore> --sender <address>` for a
+ *    password-protected Foundry keystore. The script calls
+ *    vm.startBroadcast() with no key in that mode.
  */
 contract DeployNONCEVault is Script {
     function run() external returns (NONCEVault vault) {
-        uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        require(block.chainid == 84532, "NONCE: deployment requires Base Sepolia (84532)");
+
+        uint256 deployerKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
         address vaultOwner = vm.envAddress("VAULT_OWNER");
         address monitor = vm.envAddress("NONCE_MONITOR");
 
@@ -43,7 +51,12 @@ contract DeployNONCEVault is Script {
         console2.log("Rolling 24h limit (wei)", rollingLimit);
         console2.log("Policy delay (seconds)", policyDelay);
 
-        vm.startBroadcast(deployerKey);
+        if (deployerKey != 0) {
+            vm.startBroadcast(deployerKey);
+        } else {
+            // Foundry supplies the sender and signer from --account/--sender.
+            vm.startBroadcast();
+        }
         vault = new NONCEVault(
             vaultOwner,
             monitor,

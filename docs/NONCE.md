@@ -347,10 +347,11 @@ Convex deployment:
 | `NONCE_EXPLORER_URL` | Optional explorer base URL |
 
 Contract deployment only (shell environment, never committed):
-`BASE_SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`, `VAULT_OWNER`, `NONCE_MONITOR`,
-`GUARDIAN_ONE`, `GUARDIAN_TWO`, `GUARDIAN_THREE`, `PER_TX_LIMIT_WEI`,
-`LARGE_THRESHOLD_WEI`, `ROLLING_LIMIT_WEI`, `WITHDRAWAL_DELAY_SECONDS`,
-`RECOVERY_DELAY_SECONDS`, `POLICY_DELAY_SECONDS`, `BASESCAN_API_KEY`.
+`BASE_SEPOLIA_RPC_URL`, `VAULT_OWNER`, `NONCE_MONITOR`, `GUARDIAN_ONE`,
+`GUARDIAN_TWO`, `GUARDIAN_THREE`, `PER_TX_LIMIT_WEI`, `LARGE_THRESHOLD_WEI`,
+`ROLLING_LIMIT_WEI`, `WITHDRAWAL_DELAY_SECONDS`, `RECOVERY_DELAY_SECONDS`,
+`POLICY_DELAY_SECONDS`, `BASESCAN_API_KEY`. Sign with a Foundry keystore
+(`--account`); `DEPLOYER_PRIVATE_KEY` is for local simulation only.
 
 Email delivery is **not configured**: `notifications.settings` reports
 `emailDeliveryConfigured: false` and the interface says so.
@@ -362,8 +363,8 @@ Email delivery is **not configured**: `notifications.settings` reports
 No deployment exists in this environment. The full procedure is
 [`TESTNET_DEPLOYMENT.md`](./TESTNET_DEPLOYMENT.md). Summary:
 
-1. Install Foundry + `forge-std`, compile and run `forge test -vvv`. Do not deploy
-   on a solc compile alone.
+1. Use Foundry with the vendored `forge-std`, compile and run `forge test -vvv`.
+   Do not deploy on a solc compile or a local test pass alone.
 2. Choose distinct owner, monitor, deployer and three guardian accounts. Fund the
    deployer with Base Sepolia ETH only.
 3. Set constructor parameters within immutable bounds.
@@ -476,9 +477,9 @@ configured.
   generated types are current.
 - `bun tsc -p tsconfig.app.json --noEmit` and `bun tsc -b --noEmit` — passed, exit 0.
 - `forge build` — passed with Solidity 0.8.24 and the optimizer.
-- `forge test -vv` — 45 passed, 0 failed; 3 invariants at 256 runs / 128,000
+- `forge test -vv` — 50 passed, 0 failed; 3 invariants at 256 runs / 128,000
   calls / 0 reverts; fuzz runs at 256.
-- `forge test --fork-url https://sepolia.base.org -vv` — 46 passed, 0 failed,
+- `forge test --fork-url https://sepolia.base.org -vv` — 50 passed, 0 failed,
   including a local deploy/deposit on forked Base Sepolia state.
 - Slither 0.11.6 — 13 informational findings, no high/medium findings.
 - Deploy script dry-run on a Base Sepolia fork — succeeded; **no broadcast**.

@@ -10,7 +10,7 @@ audited, production-ready or fully tested.
   not an independent security audit.
 - **Not deployed.** There is no Base Sepolia address or deployment transaction
   from this repository.
-- **Local tests pass, but remain bounded.** `forge build` succeeds; 45
+- **Local tests pass, but remain bounded.** `forge build` succeeds; 49
   unit/invariant tests and one Base Sepolia fork test pass, including 256-run
   invariant and fuzz campaigns. These are bounded engineering checks, not a
   proof, an independent audit or a deployment.
@@ -183,13 +183,13 @@ audited, production-ready or fully tested.
 - `bun convex dev --once` — passed; functions, cron and generated types pushed
   successfully to the development deployment.
 - `forge build` — passed with Solidity 0.8.24 and the optimizer.
-- `forge test -vv` — **45 passed, 0 failed**; 3 invariants at 256 runs /
-  128,000 calls / 0 reverts; fuzz runs at 256.
-- `forge test --fork-url https://sepolia.base.org -vv` — **46 passed, 0 failed**,
+- `forge test -vv` — **50 passed, 0 failed**; 3 invariants at 256 runs / 128,000
+  calls / 0 reverts; fuzz runs at 256.
+- `forge test --fork-url https://sepolia.base.org -vv` — **50 passed, 0 failed**,
   including the fork deploy/deposit test.
 - Slither 0.11.6 — 13 informational findings, no high/medium findings.
 - `bunx solc@0.8.24 --optimize --optimize-runs 200` — compiled successfully;
-  creation bytecode 19,800 bytes.
+  initcode 19,801 bytes.
 - `bun test tests/policyRules.test.ts` — 8 passed, 0 failed, covering backend
   rolling-reservation accounting and policy validation.
 - Deploy script dry-run on a Base Sepolia fork — succeeded, no broadcast.

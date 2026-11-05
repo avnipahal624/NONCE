@@ -13,7 +13,7 @@ The app never uses mainnet. Do not put real assets in this contract.
 
 A deployment proves that a contract exists at an address and that its functions
 respond. It does **not** prove the code is correct. This contract is unaudited;
-its 45-test suite and Base Sepolia fork test pass locally, but that is bounded
+its 49-test suite and Base Sepolia fork test pass locally, but that is bounded
 engineering validation, not an audit. Deploy only testnet ETH and only after
 reading [`SECURITY_ARCHITECTURE.md`](./SECURITY_ARCHITECTURE.md),
 [`TEST_REPORT.md`](./TEST_REPORT.md) and [`KNOWN_LIMITATIONS.md`](./KNOWN_LIMITATIONS.md).
@@ -57,7 +57,8 @@ The deployment script reads:
 
 | Variable | Meaning | Constraints |
 | --- | --- | --- |
-| `DEPLOYER_PRIVATE_KEY` | Broadcast key | Funded Base Sepolia account; not the owner |
+| `DEPLOYER_PRIVATE_KEY` | Optional local simulation key | Funded Base Sepolia account; not the owner. Prefer a Foundry keystore for broadcast. |
+| `DEPLOYER_ADDRESS` | Keystore sender for the command | Must match the keystore account; not read by the Solidity script. |
 | `VAULT_OWNER` | Owner signer | Non-zero; distinct from monitor/guardians |
 | `NONCE_MONITOR` | Freeze-only role | Non-zero; distinct from owner/guardians |
 | `GUARDIAN_ONE` … `THREE` | Guardian addresses | Three distinct, non-zero, no role collision |
@@ -76,7 +77,7 @@ Suggested conservative testnet values, not production advice:
 
 ```bash
 export BASE_SEPOLIA_RPC_URL="https://sepolia.base.org"
-export DEPLOYER_PRIVATE_KEY="0x..."
+export DEPLOYER_ADDRESS="0x..."
 export VAULT_OWNER="0x..."
 export NONCE_MONITOR="0x..."
 export GUARDIAN_ONE="0x..."
@@ -92,25 +93,61 @@ export POLICY_DELAY_SECONDS="86400"                   # 1 day
 
 ## 4. Simulate, then broadcast
 
+Create a password-protected Foundry keystore once. `cast wallet import` prompts
+for the key and an encryption password; do not put the key in shell history or a
+file in this repository.
+
+```bash
+cast wallet import nonce-testnet-deployer --interactive
+```
+
+Simulate first. This reads chain state but does not sign or broadcast:
+
 ```bash
 cd contracts
 
 forge script script/Deploy.s.sol:DeployNONCEVault \
-  --rpc-url "$BASE_SEPOLIA_RPC_URL" \
-  --private-key "$DEPLOYER_PRIVATE_KEY" \
+  --fork-url "$BASE_SEPOLIA_RPC_URL" \
+  --account nonce-testnet-deployer \
+  --sender "$DEPLOYER_ADDRESS" \
   -vvv
 ```
 
+With a local-only test key, `DEPLOYER_PRIVATE_KEY` may be set for simulation.
+Do not use that mode for a funded account. The script explicitly reverts unless
+`block.chainid == 84532`.
+
 Confirm from the trace that the logged owner, monitor, guardians, limits and
-delays are the values you intended. Then broadcast and verify:
+delays are the values you intended. Then broadcast and verify after explicit
+authorization:
 
 ```bash
 forge script script/Deploy.s.sol:DeployNONCEVault \
   --rpc-url "$BASE_SEPOLIA_RPC_URL" \
-  --private-key "$DEPLOYER_PRIVATE_KEY" \
+  --chain 84532 \
+  --account nonce-testnet-deployer \
+  --sender "$DEPLOYER_ADDRESS" \
   --broadcast --verify \
+  --verifier etherscan \
+  --verifier-url "https://api-sepolia.basescan.org/api" \
   --etherscan-api-key "$BASESCAN_API_KEY" \
   -vvv
+```
+
+For a manual source-verification retry:
+
+```bash
+forge verify-contract "$NONCE_VAULT_ADDRESS" NONCEVault.sol:NONCEVault \
+  --chain 84532 \
+  --verifier etherscan \
+  --verifier-url "https://api-sepolia.basescan.org/api" \
+  --etherscan-api-key "$BASESCAN_API_KEY" \
+  --constructor-args "$(cast abi-encode \
+    'constructor(address,address,address[3],uint256,uint256,uint256,uint64,uint64,uint64)' \
+    "$VAULT_OWNER" "$NONCE_MONITOR" \
+    "[$GUARDIAN_ONE,$GUARDIAN_TWO,$GUARDIAN_THREE]" \
+    "$PER_TX_LIMIT_WEI" "$LARGE_THRESHOLD_WEI" "$ROLLING_LIMIT_WEI" \
+    "$WITHDRAWAL_DELAY_SECONDS" "$RECOVERY_DELAY_SECONDS" "$POLICY_DELAY_SECONDS")"
 ```
 
 Record:
@@ -267,6 +304,6 @@ you observe them.
 - No Convex environment values for the contract, so the indexer cron is a no-op
   and `/testnet` shows blockers.
 
-The toolchain and local tests are available: `forge build`, 45 unit/invariant
+The toolchain and local tests are available: `forge build`, 49 unit/invariant
 tests and a Base Sepolia fork test pass, and the deploy script dry-run succeeds.
 Those facts still do not constitute a deployment.

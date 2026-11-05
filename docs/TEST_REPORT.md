@@ -24,18 +24,22 @@ Commands run from `contracts/`:
 
 ```bash
 forge build
-forge test -vv
+forge test -vvv
 ```
 
 Result:
 
 - Build: successful. Runtime size 18,321 bytes; initcode 19,801 bytes.
-- `NONCEVault.t.sol`: **45 passed, 0 failed**.
-- The full `forge test -vv` command reported **46 passed, 0 failed**: the fork
+- `NONCEVault.t.sol`: **49 passed, 0 failed**.
+- The full `forge test -vvv` command reported **50 passed, 0 failed**: the fork
   test also ran because it falls back to the public RPC when the environment
   variable is absent.
 - Invariant suite: 3 invariants, **256 runs / 128,000 calls / 0 reverts**.
 - Fuzz runs: 256 each for the configured fuzz tests.
+
+The expanded suite adds cross-request withdrawal-approval replay, cross-nonce
+recovery-approval replay, guardian recovery under a monitor freeze, and a check
+that restoration cannot clear a guardian-initiated recovery freeze.
 
 The first run found one fixture inconsistency: the allowlist-removal success
 test enabled allowlist-only with a single entry, while the contract correctly
@@ -54,7 +58,7 @@ forge test --fork-url https://sepolia.base.org -vv
 Result:
 
 - Fork test: **1 passed**.
-- Complete suite on the Base Sepolia fork: **46 passed, 0 failed**.
+- Complete suite on the Base Sepolia fork: **50 passed, 0 failed**.
 - The fork test deploys `NONCEVault` locally against forked Base Sepolia state
   and verifies chain ID, roles, policy values, guardian count and a deposit. It
   does **not** broadcast a transaction.

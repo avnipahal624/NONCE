@@ -838,6 +838,90 @@ contract NONCEVaultTest is Test {
         assertEq(vault.reservedBalance(), 0.1 ether);
     }
 
+    /* ---------------------- replay / nonce isolation -------------------- */
+
+    function testGuardianApprovalIsScopedToWithdrawalId() public {
+        vm.prank(owner);
+        uint256 first = vault.requestWithdrawal(0.6 ether, recipient);
+        vm.prank(owner);
+        uint256 second = vault.requestWithdrawal(0.6 ether, recipient);
+
+        vm.prank(guardianOne);
+        vault.approveWithdrawal(first);
+        (, , , , , uint8 firstApprovals, , , ) = vault.withdrawals(first);
+        (, , , , , uint8 secondApprovals, , , ) = vault.withdrawals(second);
+        assertEq(firstApprovals, 1);
+        assertEq(secondApprovals, 0);
+
+        vm.prank(guardianOne);
+        vm.expectRevert(NONCEVault.AlreadyApproved.selector);
+        vault.approveWithdrawal(first);
+
+        // An approval on one request must not leak to another request, even
+        // when both have identical amounts and recipients.
+        vm.warp(block.timestamp + WITHDRAWAL_DELAY);
+        vm.expectRevert(NONCEVault.ApprovalIncomplete.selector);
+        vault.executeWithdrawal(second);
+    }
+
+    function testGuardianRecoveryApprovalDoesNotCarryToNextProposal() public {
+        vm.prank(guardianOne);
+        vault.proposeRecovery(address(0xDEAD));
+        vm.prank(guardianTwo);
+        vault.approveRecovery();
+
+        vm.prank(guardianOne);
+        vault.cancelRecovery();
+        vm.prank(guardianTwo);
+        vault.cancelRecovery();
+
+        vm.prank(guardianOne);
+        vault.proposeRecovery(address(0xBEEF));
+        vm.warp(block.timestamp + RECOVERY_DELAY);
+
+        // The new proposal has only the proposer's automatic approval.
+        vm.expectRevert(NONCEVault.ApprovalIncomplete.selector);
+        vault.executeRecovery();
+
+        vm.prank(guardianTwo);
+        vault.approveRecovery();
+        vault.executeRecovery();
+        assertEq(vault.owner(), address(0xBEEF));
+    }
+
+    /* ---------------------- freeze / recovery interplay ----------------- */
+
+    function testGuardianRecoveryCanExecuteWhileMonitorFrozen() public {
+        vm.prank(monitor);
+        vault.freeze();
+
+        vm.prank(guardianOne);
+        vault.proposeRecovery(address(0xDEAD));
+        vm.prank(guardianTwo);
+        vault.approveRecovery();
+        vm.warp(block.timestamp + RECOVERY_DELAY);
+        vault.executeRecovery();
+
+        assertEq(vault.owner(), address(0xDEAD));
+        assertEq(vault.epoch(), 2);
+        assertFalse(vault.frozen());
+    }
+
+    function testRestorationCannotClearGuardianRecoveryFreeze() public {
+        vm.prank(guardianOne);
+        vault.proposeRecovery(address(0xDEAD));
+        assertTrue(vault.recoveryFrozen());
+        assertFalse(vault.monitorFrozen());
+
+        vm.prank(owner);
+        vm.expectRevert(NONCEVault.NotFrozen.selector);
+        vault.proposeRestoration();
+
+        // The guardian-initiated recovery remains active and the vault stays
+        // frozen; restoration is only the monitor false-positive path.
+        assertTrue(vault.frozen());
+    }
+
     /* -------------------------------- fuzz ------------------------------ */
 
     function testFuzzReservationNeverExceedsBalance(uint96 rawAmount) public {

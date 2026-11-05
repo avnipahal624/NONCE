@@ -68,7 +68,7 @@ restoration path.
 | L-01 | `receive()` rejected deposits while frozen. | Availability only; a freeze prevented top-ups. | Deposits remain allowed unless the recipient is the zero address; freeze blocks exits, not entries. |
 | L-02 | Backend allowlist silently truncated at 20 entries. | Could produce an unexpected policy. | Inputs are validated and the cap is explicit and reported. |
 | L-03 | Unused imports and a dead incident block. | Maintenance noise. | Removed during hardening. |
-| L-04 | Test suite covered happy paths and a few access checks only. | No invariant or adversarial coverage. | Expanded Foundry suite; 45 unit/invariant tests and one fork test pass locally. This remains bounded testing, not an audit. |
+| L-04 | Test suite covered happy paths and a few access checks only. | No invariant or adversarial coverage. | Expanded Foundry suite; 49 unit/invariant tests and one fork test pass locally. This remains bounded testing, not an audit. |
 
 ## Post-remediation adversarial review
 
@@ -114,9 +114,9 @@ status — was simulated or backend-enforced.
 
 ## Verification limits at review time
 
-The source review above was followed by local dynamic checks: `forge build`, 45
+The source review above was followed by local dynamic checks: `forge build`, 49
 unit/invariant tests, a Base Sepolia fork test, a no-broadcast deploy-script
-simulation and a Slither run. The full suite passes (46 including the fork test)
+simulation and a Slither run. The full suite passes (50 including the fork test)
 and Slither reports only informational findings; see [`TEST_REPORT.md`](./TEST_REPORT.md).
 No contract is deployed or verified, and none of this is an independent audit.
 The findings above remain source-review findings, not a proof of safety.

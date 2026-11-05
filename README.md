@@ -16,6 +16,8 @@ shows blockers. No mainnet path exists. Do not send real assets.
 - Enforcement boundaries: [`docs/SECURITY_ARCHITECTURE.md`](docs/SECURITY_ARCHITECTURE.md)
 - Threats and residual risk: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
 - Deployment and verification: [`docs/TESTNET_DEPLOYMENT.md`](docs/TESTNET_DEPLOYMENT.md)
+- Deployment readiness and exact command: [`docs/DEPLOYMENT_READINESS.md`](docs/DEPLOYMENT_READINESS.md)
+- Reproducible audit package and auditor scope: [`docs/AUDIT_PACKAGE.md`](docs/AUDIT_PACKAGE.md)
 - Actual test, fork and static-analysis results: [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
 - What is not done or tested: [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md)
 - Reference Solidity vault and deployment steps: [`contracts/README.md`](contracts/README.md)
@@ -25,8 +27,8 @@ shows blockers. No mainnet path exists. Do not send real assets.
 Commands: `bun convex dev --once` (codegen + function push), `bun tsc -b --noEmit`
 (typecheck), `bun test tests/policyRules.test.ts` (8 backend policy tests). The
 platform runs codegen and typecheck after each change; do not start dev servers.
-Contract checks: `cd contracts && forge build && forge test -vv`. The suite has
-**45 passing unit/invariant tests plus 1 fork test**, but there is still no
+Contract checks: `cd contracts && forge build && forge test -vvv`. The suite has
+**49 passing unit/invariant tests plus 1 fork test**, but there is still no
 Base Sepolia deployment; see the test report and deployment guide before
 claiming any on-chain result.
 
