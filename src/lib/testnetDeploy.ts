@@ -12,7 +12,7 @@ import {
   type Hex,
 } from "viem";
 import { baseSepolia } from "viem/chains";
-import artifactRaw from "../../contracts/out/NONCEVault.sol/NONCEVault.json?raw";
+import artifactUrl from "../../contracts/out/NONCEVault.sol/NONCEVault.json?url";
 import { getInjectedWallet, humanizeWalletError } from "./wallet";
 import { TESTNET_CHAIN_ID } from "./testnet";
 
@@ -405,12 +405,26 @@ export async function loadNonceVaultArtifact(): Promise<DeployArtifact> {
   if (artifactPromise) return artifactPromise;
 
   artifactPromise = (async () => {
+    let response: Response;
+    try {
+      response = await fetch(artifactUrl);
+    } catch {
+      throw new Error(
+        "The compiled NONCEVault artifact could not be fetched. Reload the page and try again.",
+      );
+    }
+    if (!response.ok) {
+      throw new Error(
+        "The compiled NONCEVault artifact could not be loaded. Run `forge build` in contracts/ and reload this page.",
+      );
+    }
+
     let artifact: {
       bytecode?: { object?: string };
       deployedBytecode?: { object?: string };
     };
     try {
-      artifact = JSON.parse(artifactRaw) as typeof artifact;
+      artifact = (await response.json()) as typeof artifact;
     } catch {
       throw new Error(
         "The compiled NONCEVault artifact is not valid JSON. Run `forge build` in contracts/ and reload this page.",
