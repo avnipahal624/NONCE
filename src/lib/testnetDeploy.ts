@@ -12,7 +12,7 @@ import {
   type Hex,
 } from "viem";
 import { baseSepolia } from "viem/chains";
-import artifactUrl from "../../contracts/out/NONCEVault.sol/NONCEVault.json?url";
+import artifactRaw from "../../contracts/out/NONCEVault.sol/NONCEVault.json?raw";
 import { getInjectedWallet, humanizeWalletError } from "./wallet";
 import { TESTNET_CHAIN_ID } from "./testnet";
 
@@ -133,6 +133,7 @@ export type DeployArtifact = {
 };
 
 export type DeploymentQuote = {
+  account: Address;
   config: VaultDeploymentConfig;
   gas: bigint;
   maxFeePerGas: bigint;
@@ -196,6 +197,18 @@ function publicClientFor(provider: ReturnType<typeof requireProvider>) {
   });
 }
 
+async function assertConnectedAccount(
+  provider: ReturnType<typeof requireProvider>,
+  account: Address,
+): Promise<void> {
+  const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+  if (!accounts[0] || accounts[0].toLowerCase() !== account.toLowerCase()) {
+    throw new Error(
+      "The connected MetaMask account changed. Reconnect the intended wallet and review the deployment again.",
+    );
+  }
+}
+
 function walletClientFor(account: Address, provider: ReturnType<typeof requireProvider>) {
   return createWalletClient({
     account,
@@ -206,7 +219,7 @@ function walletClientFor(account: Address, provider: ReturnType<typeof requirePr
 
 function parseAddress(value: string, label: string, errors: string[]): Address | null {
   const trimmed = value.trim();
-  if (!trimmed || !isAddress(trimmed)) {
+  if (!trimmed || !isAddress(trimmed) || /^0x0{40}$/i.test(trimmed)) {
     errors.push(`${label} must be a valid non-zero 0x address.`);
     return null;
   }
@@ -388,37 +401,43 @@ export function encodeVaultDeployment(config: VaultDeploymentConfig, bytecode: H
   });
 }
 
-export function loadNonceVaultArtifact(): Promise<DeployArtifact> {
-  artifactPromise ??= fetch(artifactUrl)
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error(
-          "The compiled NONCEVault artifact could not be loaded. Run `forge build` in contracts/ and reload this page.",
-        );
-      }
-      const artifact = (await response.json()) as {
-        bytecode?: { object?: string };
-        deployedBytecode?: { object?: string };
-      };
-      const bytecode = artifact.bytecode?.object;
-      const deployedBytecode = artifact.deployedBytecode?.object;
-      if (!bytecode || !bytecode.startsWith("0x") || bytecode.length <= 2) {
-        throw new Error("The NONCEVault artifact has no deployment bytecode.");
-      }
-      if (!deployedBytecode || !deployedBytecode.startsWith("0x")) {
-        throw new Error("The NONCEVault artifact has no runtime bytecode.");
-      }
-      return {
-        bytecode: bytecode as Hex,
-        deployedBytecode: deployedBytecode as Hex,
-        bytecodeHash: keccak256(bytecode as Hex),
-      };
-    })
-    .catch((error) => {
-      artifactPromise = null;
-      throw error;
-    });
-  return artifactPromise;
+export async function loadNonceVaultArtifact(): Promise<DeployArtifact> {
+  if (artifactPromise) return artifactPromise;
+
+  artifactPromise = (async () => {
+    let artifact: {
+      bytecode?: { object?: string };
+      deployedBytecode?: { object?: string };
+    };
+    try {
+      artifact = JSON.parse(artifactRaw) as typeof artifact;
+    } catch {
+      throw new Error(
+        "The compiled NONCEVault artifact is not valid JSON. Run `forge build` in contracts/ and reload this page.",
+      );
+    }
+
+    const bytecode = artifact.bytecode?.object;
+    const deployedBytecode = artifact.deployedBytecode?.object;
+    if (!bytecode || !bytecode.startsWith("0x") || bytecode.length <= 2) {
+      throw new Error("The NONCEVault artifact has no deployment bytecode.");
+    }
+    if (!deployedBytecode || !deployedBytecode.startsWith("0x")) {
+      throw new Error("The NONCEVault artifact has no runtime bytecode.");
+    }
+    return {
+      bytecode: bytecode as Hex,
+      deployedBytecode: deployedBytecode as Hex,
+      bytecodeHash: keccak256(bytecode as Hex),
+    };
+  })();
+
+  try {
+    return await artifactPromise;
+  } catch (error) {
+    artifactPromise = null;
+    throw error;
+  }
 }
 
 export async function readDeploymentWallet(account: Address): Promise<{
@@ -445,6 +464,7 @@ export async function estimateVaultDeployment(
 
   const artifact = await loadNonceVaultArtifact();
   const provider = requireProvider();
+  await assertConnectedAccount(provider, account);
   const client = publicClientFor(provider);
   const chainId = await client.getChainId();
   if (chainId !== TESTNET_CHAIN_ID) {
@@ -474,6 +494,7 @@ export async function estimateVaultDeployment(
       : null;
 
   return {
+    account,
     config: validation.config,
     gas,
     maxFeePerGas,
@@ -496,6 +517,7 @@ export async function deployVault(
 
   const artifact = await loadNonceVaultArtifact();
   const provider = requireProvider();
+  await assertConnectedAccount(provider, account);
   const chainId = (await provider.request({ method: "eth_chainId" })) as string;
   if (Number.parseInt(chainId, 16) !== TESTNET_CHAIN_ID) {
     throw new Error(

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ArrowUpRight,
   Check,
   ExternalLink,
   Loader2,
@@ -16,7 +15,7 @@ import { SectionLabel } from "@/components/nonce/PageHeader";
 import { StatusPill } from "@/components/nonce/StatusPill";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { explorerAddress, explorerTx } from "@/lib/testnet";
+import { connectTestnetWallet, explorerAddress, explorerTx } from "@/lib/testnet";
 import {
   BASE_SEPOLIA_EXPLORER,
   NONCE_VAULT_OWNER,
@@ -34,7 +33,6 @@ import {
 } from "@/lib/testnetDeploy";
 import { humanizeWalletError } from "@/lib/wallet";
 import { cn } from "@/lib/utils";
-import { connectTestnetWallet } from "@/lib/testnet";
 
 const DEFAULT_FORM: VaultDeploymentForm = {
   monitor: "",
@@ -48,6 +46,7 @@ const DEFAULT_FORM: VaultDeploymentForm = {
 };
 
 type WalletState = {
+  account: ViemAddress;
   chainId: number;
   balanceWei: bigint;
 };
@@ -185,9 +184,15 @@ export function DeployVaultPanel({
 
   const validation = useMemo(() => validateVaultDeployment(form), [form]);
   const config = validation.config;
-  const wrongNetwork = wallet !== null && wallet.chainId !== 84532;
+  const visibleWallet =
+    account && wallet && wallet.account.toLowerCase() === account.toLowerCase() ? wallet : null;
+  const visibleWalletError = account ? walletError : null;
+  const wrongNetwork = visibleWallet !== null && visibleWallet.chainId !== 84532;
   const insufficientBalance =
     quote !== null ? quote.maxCostWei > quote.balanceWei : false;
+  const quoteMatchesAccount = Boolean(
+    account && quote && quote.account.toLowerCase() === account.toLowerCase(),
+  );
   const deploymentComplete = verification !== null && verification.mismatches.length === 0;
   const anythingBusy = busy !== null;
 
@@ -212,16 +217,14 @@ export function DeployVaultPanel({
   }, []);
 
   useEffect(() => {
-    if (!account) {
-      setWallet(null);
-      setWalletError(null);
-      return;
-    }
+    if (!account) return;
     let cancelled = false;
-    setWalletError(null);
     void readDeploymentWallet(account)
       .then((next) => {
-        if (!cancelled) setWallet(next);
+        if (!cancelled) {
+          setWallet({ account, ...next });
+          setWalletError(null);
+        }
       })
       .catch((reason) => {
         if (!cancelled) {
@@ -239,7 +242,8 @@ export function DeployVaultPanel({
     setBusy("wallet");
     setWalletError(null);
     try {
-      setWallet(await readDeploymentWallet(account));
+      const next = await readDeploymentWallet(account);
+      setWallet({ account, ...next });
     } catch (reason) {
       setWallet(null);
       setWalletError(humanizeWalletError(reason));
@@ -323,7 +327,11 @@ export function DeployVaultPanel({
 
   const deploy = async () => {
     if (!account || !quote || !reviewed || !confirmed || !config) return;
-    if (wallet && wallet.chainId !== 84532) {
+    if (quote.account.toLowerCase() !== account.toLowerCase()) {
+      setError("The wallet account changed since the estimate. Review the deployment again.");
+      return;
+    }
+    if (visibleWallet && visibleWallet.chainId !== 84532) {
       setError("Switch your wallet to Base Sepolia (chain ID 84532) before deploying.");
       return;
     }
@@ -434,9 +442,13 @@ export function DeployVaultPanel({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <SectionLabel>Wallet & network</SectionLabel>
               <div className="flex items-center gap-2">
-                {wallet && (
+                {visibleWallet && (
                   <StatusPill
-                    label={wrongNetwork ? `Chain ${wallet.chainId}` : "Base Sepolia · 84532"}
+                    label={
+                      wrongNetwork
+                        ? `Chain ${visibleWallet.chainId}`
+                        : "Base Sepolia · 84532"
+                    }
                     tone={wrongNetwork ? "danger" : "safe"}
                   />
                 )}
@@ -453,6 +465,7 @@ export function DeployVaultPanel({
             </div>
 
             {account ? (
+              <>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-mint/20 bg-mint/[0.04] px-3 py-2.5">
                 <div>
                   <p className="text-[9px] uppercase tracking-[0.14em] text-sage">Deployer wallet</p>
@@ -461,10 +474,18 @@ export function DeployVaultPanel({
                 <div className="text-right">
                   <p className="text-[9px] uppercase tracking-[0.14em] text-sage">Balance</p>
                   <p className="mt-1 font-mono text-[11px] text-ivory">
-                    {wallet ? formatEth(wallet.balanceWei) : "Reading…"}
+                    {visibleWallet ? formatEth(visibleWallet.balanceWei) : "Reading…"}
                   </p>
                 </div>
               </div>
+              {account.toLowerCase() !== NONCE_VAULT_OWNER.toLowerCase() && (
+                <p className="mt-2 rounded-lg border border-[#E9B45E]/25 bg-[#E9B45E]/[0.05] px-3 py-2.5 text-[9px] leading-4 text-[#E9B45E]">
+                  This connected account signs the deployment, but the initial owner remains the
+                  fixed address shown in Constructor roles. Make sure that owner is a wallet you
+                  control.
+                </p>
+              )}
+              </>
             ) : (
               <div className="mt-3 rounded-lg border border-hairline/60 bg-black/20 px-3 py-3">
                 <p className="text-[10px] leading-5 text-sage">
@@ -486,8 +507,8 @@ export function DeployVaultPanel({
               </div>
             )}
 
-            {walletError && (
-              <p className="mt-2 text-[10px] leading-5 text-[#F17676]">{walletError}</p>
+            {visibleWalletError && (
+              <p className="mt-2 text-[10px] leading-5 text-[#F17676]">{visibleWalletError}</p>
             )}
             {wrongNetwork && (
               <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[#F17676]/25 bg-[#F17676]/[0.05] px-3 py-2.5">
@@ -733,6 +754,12 @@ export function DeployVaultPanel({
                   display the gas estimate and maximum cost before any wallet request.
                 </p>
               )}
+              {quote && account && !quoteMatchesAccount && (
+                <p className="rounded-lg border border-[#E9B45E]/25 bg-[#E9B45E]/[0.05] px-3 py-2.5 text-[10px] leading-5 text-[#E9B45E]">
+                  The connected wallet account changed after this estimate. Review the deployment
+                  again before opening MetaMask.
+                </p>
+              )}
             </div>
 
             {reviewConfig && (
@@ -781,7 +808,13 @@ export function DeployVaultPanel({
                 type="checkbox"
                 checked={confirmed}
                 onChange={(event) => setConfirmed(event.target.checked)}
-                disabled={!reviewed || !quote || anythingBusy || deploymentHash !== null}
+                disabled={
+                  !reviewed ||
+                  !quote ||
+                  !quoteMatchesAccount ||
+                  anythingBusy ||
+                  deploymentHash !== null
+                }
                 className="mt-1 size-3.5 shrink-0 accent-[#57D5A5]"
               />
               <span>
@@ -796,6 +829,7 @@ export function DeployVaultPanel({
               disabled={
                 !account ||
                 !quote ||
+                !quoteMatchesAccount ||
                 !reviewed ||
                 !confirmed ||
                 anythingBusy ||

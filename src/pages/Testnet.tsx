@@ -17,6 +17,7 @@ import { AppShell } from "@/components/nonce/AppShell";
 import { EmptyState, PageHeader, SectionLabel } from "@/components/nonce/PageHeader";
 import { StatusPill } from "@/components/nonce/StatusPill";
 import { Address } from "@/components/nonce/Address";
+import { DeployVaultPanel } from "@/components/nonce/DeployVaultPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -244,6 +245,12 @@ export default function Testnet() {
             {notice}
           </p>
         )}
+
+        <DeployVaultPanel
+          account={account}
+          onAccountChange={setAccount}
+          configuredContract={contract}
+        />
 
         <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
           <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/80 p-5">
