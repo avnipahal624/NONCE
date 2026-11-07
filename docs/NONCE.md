@@ -72,8 +72,8 @@ Trust boundaries:
 | `/dashboard` | protected | Balances, posture, shortcuts, recent activity |
 | `/vault` | protected | Assets, policy proposals, pending withdrawals, history |
 | `/protection` | protected | Checklist, decoy network, signal simulation, monitor health |
-| `/activity` | protected | Timeline, incidents, audit log, service health |
-| `/activity/:incidentId` | protected | Evidence, lockdown attempts, review actions |
+| `/activity` | protected | Security Response Center: incident queue, timeline, audit log, service health |
+| `/activity/:incidentId` | protected | Evidence, response timeline, lockdown attempts, review actions |
 | `/recovery` | protected | Guardians, owner/guardian proposals, approvals, cancellation, execution |
 | `/testnet` | protected | Live Base Sepolia contract state, wallet writes, receipt verification |
 | `/settings` | protected | Profile, notifications, wallets, environment |
@@ -114,9 +114,10 @@ docs/                          this document, audit, architecture, threat model,
   addresses and references. Tailwind v4 tokens plus existing shadcn variables.
 - **Marketing.** Every claim is paired with its limitation; testnet-only,
   unaudited and sandbox status are visible.
-- **App shell.** Sidebar: Home, My Vault, Protection, Activity, Recovery,
-  Testnet, Settings. Live protection card, demo banner, notification popover,
-  account menu and mobile bottom navigation.
+- **App shell.** Sidebar: Dashboard, Vault, Protection, Response Center,
+  Guardians, Testnet, Settings. Live protection card, explicit Sandbox/Live
+  indicator, connected wallet, notification popover, account menu and mobile
+  bottom navigation.
 - **Data flow.** `useWorkspace` subscribes to `vaults.workspace`; pages read
   vault, assets, policy, proposals, decoys, guardians, monitoring and protection
   from that snapshot. Every demo write is a Convex mutation. The testnet page
@@ -138,6 +139,8 @@ docs/                          this document, audit, architecture, threat model,
   request is queued for at least 10 minutes, reserves balance and rolling
   allowance, and expires after seven days. Large or cumulative requests need two
   guardian approvals (simulated in demo). Pending requests can be cancelled.
+  `/vault` renders a data-derived request journey; its countdown is display-only
+  and never overrides the stored `executeAfter` timestamp.
 - **Policy proposals.** `/vault` creates a timelocked proposal with conservative
   weakening classification. The demo timelock is 2 minutes. Approvals appear as
   simulated guardian actions. Execution recomputes classification and revalidates

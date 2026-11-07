@@ -136,12 +136,12 @@ backend.
 - `bun test tests/policyRules.test.ts` — **8 passed, 0 failed**.
 - `bun convex dev --once` — functions, cron and generated types pushed
   successfully.
-- `bun run lint` — **failed overall**: 13 errors and 19 warnings. The failures
-  are pre-existing React-hooks/purity issues in template and earlier UI files
-  (`PolicyDialog`, `carousel`, `sidebar`, `use-mobile`, `Onboarding`,
-  `Recovery`, `Settings`, `Vault`). The new indexer/events/console files and the
-  dashboard integration pass a targeted ESLint run. They were not suppressed or
-  weakened.
+- `bun run lint` — **failed overall**: 10 errors and 19 warnings. The failures
+  are pre-existing React-hooks/purity and unused-symbol issues in template and
+  earlier UI files (`PolicyDialog`, `carousel`, `sidebar`, `use-mobile`,
+  `Onboarding`, `Settings`). The latest redesigned files pass a targeted ESLint
+  run; see [`UI_REDESIGN.md`](./UI_REDESIGN.md) for the current counts. They were
+  not suppressed or weakened.
 
 ## 8. Deployment status
 

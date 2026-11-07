@@ -44,18 +44,18 @@
 
 /* NONCE brand tokens */
 @theme {
-  --color-abyss: #071310;
-  --color-deep: #081713;
-  --color-surface: #10231d;
-  --color-elevated: #173229;
-  --color-mint: #57d5a5;
+  --color-abyss: #071912;
+  --color-deep: #081b13;
+  --color-surface: #102b22;
+  --color-elevated: #16382b;
+  --color-mint: #56d6a4;
   --color-mint-bright: #79e8bd;
-  --color-ivory: #f0f5f1;
-  --color-sage: #94aca0;
-  --color-hairline: #28483b;
+  --color-ivory: #f2f5ee;
+  --color-sage: #adc8ba;
+  --color-hairline: #305647;
   --color-positive: #46c99a;
   --color-caution: #e9b45e;
-  --color-critical: #f17676;
+  --color-critical: #ef7777;
   --color-signal: #79a9e8;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
@@ -65,71 +65,71 @@
 /* CHANGE VALUES FOR THEME */
 :root {
   --radius: 0.875rem;
-  --background: #071310;
-  --foreground: #f0f5f1;
-  --card: #0c1d17;
-  --card-foreground: #f0f5f1;
-  --popover: #10231d;
-  --popover-foreground: #f0f5f1;
-  --primary: #57d5a5;
+  --background: #071912;
+  --foreground: #f2f5ee;
+  --card: #0c2119;
+  --card-foreground: #f2f5ee;
+  --popover: #102b22;
+  --popover-foreground: #f2f5ee;
+  --primary: #56d6a4;
   --primary-foreground: #04241a;
-  --secondary: #173229;
-  --secondary-foreground: #f0f5f1;
-  --muted: #10231d;
-  --muted-foreground: #94aca0;
-  --accent: #173229;
-  --accent-foreground: #f0f5f1;
-  --destructive: #f17676;
-  --border: #28483b;
-  --input: #28483b;
-  --ring: #57d5a5;
-  --chart-1: #57d5a5;
+  --secondary: #16382b;
+  --secondary-foreground: #f2f5ee;
+  --muted: #102b22;
+  --muted-foreground: #adc8ba;
+  --accent: #16382b;
+  --accent-foreground: #f2f5ee;
+  --destructive: #ef7777;
+  --border: #305647;
+  --input: #305647;
+  --ring: #56d6a4;
+  --chart-1: #56d6a4;
   --chart-2: #79a9e8;
   --chart-3: #e9b45e;
-  --chart-4: #f17676;
-  --chart-5: #94aca0;
-  --sidebar: #081713;
-  --sidebar-foreground: #f0f5f1;
-  --sidebar-primary: #57d5a5;
+  --chart-4: #ef7777;
+  --chart-5: #adc8ba;
+  --sidebar: #081b13;
+  --sidebar-foreground: #f2f5ee;
+  --sidebar-primary: #56d6a4;
   --sidebar-primary-foreground: #04241a;
-  --sidebar-accent: #10231d;
-  --sidebar-accent-foreground: #f0f5f1;
-  --sidebar-border: #1d3b2f;
-  --sidebar-ring: #57d5a5;
+  --sidebar-accent: #102b22;
+  --sidebar-accent-foreground: #f2f5ee;
+  --sidebar-border: #234638;
+  --sidebar-ring: #56d6a4;
 }
 
 .dark {
-  --background: #071310;
-  --foreground: #f0f5f1;
-  --card: #0c1d17;
-  --card-foreground: #f0f5f1;
-  --popover: #10231d;
-  --popover-foreground: #f0f5f1;
-  --primary: #57d5a5;
+  --background: #071912;
+  --foreground: #f2f5ee;
+  --card: #0c2119;
+  --card-foreground: #f2f5ee;
+  --popover: #102b22;
+  --popover-foreground: #f2f5ee;
+  --primary: #56d6a4;
   --primary-foreground: #04241a;
-  --secondary: #173229;
-  --secondary-foreground: #f0f5f1;
-  --muted: #10231d;
-  --muted-foreground: #94aca0;
-  --accent: #173229;
-  --accent-foreground: #f0f5f1;
-  --destructive: #f17676;
-  --border: #28483b;
-  --input: #28483b;
-  --ring: #57d5a5;
-  --chart-1: #57d5a5;
+  --secondary: #16382b;
+  --secondary-foreground: #f2f5ee;
+  --muted: #102b22;
+  --muted-foreground: #adc8ba;
+  --accent: #16382b;
+  --accent-foreground: #f2f5ee;
+  --destructive: #ef7777;
+  --border: #305647;
+  --input: #305647;
+  --ring: #56d6a4;
+  --chart-1: #56d6a4;
   --chart-2: #79a9e8;
   --chart-3: #e9b45e;
-  --chart-4: #f17676;
-  --chart-5: #94aca0;
-  --sidebar: #081713;
-  --sidebar-foreground: #f0f5f1;
-  --sidebar-primary: #57d5a5;
+  --chart-4: #ef7777;
+  --chart-5: #adc8ba;
+  --sidebar: #081b13;
+  --sidebar-foreground: #f2f5ee;
+  --sidebar-primary: #56d6a4;
   --sidebar-primary-foreground: #04241a;
-  --sidebar-accent: #10231d;
-  --sidebar-accent-foreground: #f0f5f1;
-  --sidebar-border: #1d3b2f;
-  --sidebar-ring: #57d5a5;
+  --sidebar-accent: #102b22;
+  --sidebar-accent-foreground: #f2f5ee;
+  --sidebar-border: #234638;
+  --sidebar-ring: #56d6a4;
 }
 
 @layer base {
@@ -181,7 +181,7 @@
 }
 
 @utility border-hairline {
-  border-color: #28483b;
+  border-color: #305647;
 }
 
 .nonce-shell-grid {
@@ -294,13 +294,13 @@
 /* Fine, unobtrusive scrollbar in application panels */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #28483b transparent;
+  scrollbar-color: #305647 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background-color: #28483b;
+  background-color: #305647;
   border-radius: 999px;
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import {
   AlertTriangle,
   ArrowRight,
@@ -21,8 +22,9 @@ import { Address } from "@/components/nonce/Address";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useNow } from "@/hooks/use-now";
 import { cn } from "@/lib/utils";
-import { formatDateTime, incidentLabel, timeAgo, vaultStateCopy } from "@/lib/nonce";
+import { formatDateTime, formatRemaining, incidentLabel, timeAgo, vaultStateCopy } from "@/lib/nonce";
 import { generateSandboxAddress, isValidAddress } from "@/lib/wallet";
 
 export default function Recovery() {
@@ -49,6 +51,7 @@ export default function Recovery() {
   const [rejectReason, setRejectReason] = useState("");
   const [showReject, setShowReject] = useState(false);
   const [confirmExecute, setConfirmExecute] = useState(false);
+  const now = useNow();
 
   if (!workspace?.vault) {
     return (
@@ -84,7 +87,7 @@ export default function Recovery() {
   const canExecute =
     activeProposal &&
     activeProposal.approvalsCount >= activeProposal.threshold &&
-    Date.now() >= activeProposal.executeAfter;
+    now >= activeProposal.executeAfter;
 
   const run = async (id: string, fn: () => Promise<unknown>, success?: string) => {
     setBusy(id);
@@ -135,14 +138,17 @@ export default function Recovery() {
     <AppShell>
       <div className="space-y-5">
         <PageHeader
-          eyebrow="Recovery"
-          title="Replace the key, keep the ownership"
-          description="Guardians can open recovery without the owner key. It freezes withdrawals, needs two distinct approvals and a delay, and never gives guardians custody of assets."
+          eyebrow="Guardian recovery"
+          title="Replace the signer without giving guardians custody"
+          description="A recovery request freezes withdrawals, requires two distinct guardian approvals and a delay, and only changes the signer. Guardians never receive the vault balance."
           actions={
             <>
               <StatusPill label={state.label} tone={state.tone} />
-              <StatusPill label="2 of 3 required" tone="neutral" />
-              <StatusPill label={`${data.recoveryDelayMinutes} min delay`} tone="warn" />
+              <StatusPill label={`${data.guardianThreshold} of 3 required`} tone="neutral" />
+              <StatusPill
+                label={data.vaultMode === "DEMO" ? "Sandbox approvals" : "Contract approvals"}
+                tone={data.vaultMode === "DEMO" ? "warn" : "safe"}
+              />
             </>
           }
         />
@@ -157,6 +163,126 @@ export default function Recovery() {
             {notice}
           </p>
         )}
+
+        <section
+          className={cn(
+            "overflow-hidden rounded-2xl border p-5 sm:p-6",
+            activeProposal
+              ? "border-[#E9B45E]/30 bg-[linear-gradient(135deg,#1a2417_0%,#0b1f17_58%,#0d2119_100%)]"
+              : "border-hairline/70 bg-[#0b1f17]/75",
+          )}
+        >
+          <div className="grid gap-5 xl:grid-cols-[1fr_250px] xl:items-center">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <SectionLabel>Recovery command</SectionLabel>
+                <StatusPill
+                  label={activeProposal ? "Approval in progress" : "No active recovery"}
+                  tone={activeProposal ? "warn" : "safe"}
+                />
+              </div>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ivory">
+                {activeProposal
+                  ? `${activeProposal.approvalsCount} of ${activeProposal.threshold} guardians approved`
+                  : "Guardian quorum is standing by"}
+              </h2>
+              <p className="mt-2 max-w-2xl text-[11px] leading-5 text-sage">
+                {activeProposal
+                  ? "Only confirmed guardian approvals count. The owner cannot bypass the delay, and this screen never signs on behalf of another wallet."
+                  : "Open a recovery proposal only when the signer is lost or compromised. The vault stays normal until a proposal actually opens."}
+              </p>
+              {activeProposal ? (
+                <>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    {[
+                      { label: "Approvals", value: `${activeProposal.approvalsCount} / ${activeProposal.threshold}` },
+                      { label: "Delay", value: `${data.recoveryDelayMinutes} min` },
+                      {
+                        label: "Proposed signer",
+                        value: `${activeProposal.replacementAddress.slice(0, 6)}…${activeProposal.replacementAddress.slice(-4)}`,
+                      },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-lg border border-hairline/50 bg-black/15 px-3 py-2.5">
+                        <p className="text-[9px] uppercase tracking-[0.14em] text-sage">{item.label}</p>
+                        <p className="mt-1 truncate font-mono text-[10px] text-ivory">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-[9px] text-sage">
+                      <span>Guardian quorum</span>
+                      <span>Execution window closes {formatDateTime(activeProposal.executeAfter + data.executionWindowMs)}</span>
+                    </div>
+                    <div className="mt-1.5 flex gap-1">
+                      {Array.from({ length: activeProposal.threshold }).map((_, index) => (
+                        <span
+                          key={index}
+                          className={cn(
+                            "h-1.5 flex-1 rounded-full",
+                            index < activeProposal.approvalsCount ? "bg-mint" : "bg-white/[0.08]",
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <a
+                      href="#approval-actions"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-mint px-4 text-[11px] font-semibold text-[#04241a] hover:bg-mint-bright"
+                    >
+                      Review approvals <ArrowRight className="size-3.5" />
+                    </a>
+                    <Link
+                      to="/testnet"
+                      className="inline-flex h-9 items-center rounded-lg border border-hairline/70 px-3.5 text-[11px] text-sage hover:border-mint/30 hover:text-ivory"
+                    >
+                      Live guardian wallet path
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    to="/protection"
+                    className="inline-flex h-9 items-center rounded-lg border border-hairline/70 px-3.5 text-[11px] text-sage hover:border-mint/30 hover:text-ivory"
+                  >
+                    Review protection posture
+                  </Link>
+                  <Link
+                    to="/testnet"
+                    className="inline-flex h-9 items-center rounded-lg border border-mint/25 bg-mint/[0.05] px-3.5 text-[11px] text-mint hover:bg-mint/10"
+                  >
+                    Open live recovery console
+                  </Link>
+                </div>
+              )}
+            </div>
+            <div className="rounded-xl border border-hairline/60 bg-black/20 p-4">
+              <p className="text-[9px] uppercase tracking-[0.16em] text-sage">
+                {activeProposal ? (canExecute ? "Ready to execute" : "Delay remaining") : "Quorum"}
+              </p>
+              <p className="mt-2 font-tabular text-2xl font-semibold tracking-tight text-ivory">
+                {activeProposal
+                  ? canExecute
+                    ? "Ready"
+                    : formatRemaining(activeProposal.executeAfter, now)
+                  : `${confirmedGuardians.length} / 3`}
+              </p>
+              <p className="mt-1 text-[9px] leading-4 text-sage">
+                {activeProposal
+                  ? canExecute
+                    ? "All stored gates are satisfied. Execution still requires the owner action below."
+                    : `The contract delay is authoritative. This countdown is display-only.`
+                  : "Confirmed guardians available for a future recovery."}
+              </p>
+              {data.vaultMode === "DEMO" && (
+                <p className="mt-3 rounded-md border border-[#E9B45E]/20 bg-[#E9B45E]/[0.05] px-2.5 py-2 text-[9px] leading-4 text-[#E9B45E]/90">
+                  Sandbox guardians have no keys. Approvals on this screen are recorded as SIMULATED.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
 
         <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
           <div className="space-y-4">
@@ -263,7 +389,7 @@ export default function Recovery() {
               )}
 
               {activeProposal && (
-                <div className="border-b border-hairline/50 p-5">
+                <div id="approval-actions" className="border-b border-hairline/50 p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-[10px] text-sage">{activeProposal.reference}</span>
@@ -316,7 +442,15 @@ export default function Recovery() {
                     </div>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-1.5">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-sage">
+                      Guardian approvals
+                    </p>
+                    <span className="rounded-sm border border-[#E9B45E]/25 bg-[#E9B45E]/10 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-[#E9B45E]">
+                      Sandbox · simulated
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {activeGuardians
                       .filter((guardian) => guardian.status === "CONFIRMED")
                       .map((guardian) => {
@@ -377,8 +511,8 @@ export default function Recovery() {
 
                   <div className="mt-4 rounded-lg border border-hairline/60 bg-black/20 px-3 py-2.5 text-[10px] leading-5 text-sage">
                     Execution is available after {formatDateTime(activeProposal.executeAfter)}.
-                    {Date.now() < activeProposal.executeAfter
-                      ? " The delay has not elapsed yet."
+                    {now < activeProposal.executeAfter
+                      ? ` The delay has not elapsed; ${formatRemaining(activeProposal.executeAfter, now)} remains.`
                       : activeProposal.approvalsCount < activeProposal.threshold
                         ? " The delay has elapsed; two guardian approvals are still required."
                         : " The delay has elapsed and the approval threshold is met."}
@@ -641,9 +775,17 @@ export default function Recovery() {
 
               <p className="mt-3 text-[10px] leading-5 text-sage">
                 Sandbox guardians have no keys. Their approval is recorded as SIMULATED and cannot
-                satisfy a real signature requirement. Guardian set edits are initial-setup only;
-                after funding, rotation must go through the contract's timelocked 2-of-3 process.
+                satisfy a real signature requirement. On testnet, each guardian must connect their
+                own wallet in the Testnet Console; NONCE never impersonates a guardian. Guardian set
+                edits are initial-setup only; after funding, rotation must go through the contract's
+                timelocked 2-of-3 process.
               </p>
+              <Link
+                to="/testnet"
+                className="mt-2 inline-flex items-center gap-1 text-[10px] text-mint hover:text-mint-bright"
+              >
+                Open guardian wallet path <ArrowRight className="size-3" />
+              </Link>
             </div>
 
             <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/60 p-5">

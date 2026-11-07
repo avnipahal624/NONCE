@@ -18,6 +18,8 @@ import { EmptyState, PageHeader, SectionLabel } from "@/components/nonce/PageHea
 import { StatusPill } from "@/components/nonce/StatusPill";
 import { Address } from "@/components/nonce/Address";
 import { DeployVaultPanel } from "@/components/nonce/DeployVaultPanel";
+import { Timeline, type TimelineStep } from "@/components/nonce/Timeline";
+import { useNow } from "@/hooks/use-now";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -81,6 +83,7 @@ export default function Testnet() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const now = useNow(30_000);
 
   const configured = Boolean(config?.configured && config.contractAddress);
   const contract = config?.contractAddress ?? null;
@@ -222,6 +225,79 @@ export default function Testnet() {
             </>
           }
         />
+
+        <section className="rounded-2xl border border-hairline/70 bg-[#0b1f17]/75 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <SectionLabel>Deployment and read state</SectionLabel>
+              <p className="mt-1 text-[10px] text-sage">
+                These are separate facts. A configured address does not imply a successful read,
+                and a read does not imply source verification.
+              </p>
+            </div>
+            <StatusPill
+              label={configured ? "Contract readable" : config.contractAddress ? "Address present · read blocked" : "Not deployed"}
+              tone={configured ? "warn" : config.contractAddress ? "danger" : "neutral"}
+            />
+          </div>
+          <Timeline
+            className="mt-5"
+            ariaLabel="Testnet deployment and read state"
+            steps={[
+              {
+                key: "wallet",
+                title: "Wallet",
+                description: account ? "Connected for writes" : "Not required for reads",
+                state: account ? "complete" : "pending",
+              },
+              {
+                key: "address",
+                title: "Contract address",
+                description: config.contractAddress
+                  ? `${config.contractAddress.slice(0, 8)}… configured`
+                  : "No NONCE_VAULT_ADDRESS",
+                state: config.contractAddress ? "complete" : "pending",
+              },
+              {
+                key: "read",
+                title: "Live read",
+                description: state?.ok
+                  ? `Observed at block ${state.blockNumber}`
+                  : state && !state.ok
+                    ? state.error
+                    : "Waiting for a configured RPC read",
+                state: state?.ok ? "complete" : state && !state.ok ? "failed" : "pending",
+              },
+              {
+                key: "verification",
+                title: "Source verification",
+                description: config.verifiedOnExplorer
+                  ? "Recorded as verified on the explorer"
+                  : "Not recorded; do not call the source verified",
+                state: config.verifiedOnExplorer ? "complete" : "pending",
+              },
+              {
+                key: "indexer",
+                title: "Event indexer",
+                description: indexFeed?.configured
+                  ? `${indexFeed.events.length} recent event(s) · ${indexFeed.checkpoint?.health ?? "no checkpoint"}`
+                  : "Not configured; no chain event feed",
+                state:
+                  indexFeed?.checkpoint?.health === "ACTIVE"
+                    ? "complete"
+                    : indexFeed?.configured
+                      ? "current"
+                      : "pending",
+              },
+            ] satisfies TimelineStep[]}
+          />
+          {config.contractAddress && !config.configured && (
+            <div className="mt-4 rounded-lg border border-[#E9B45E]/25 bg-[#E9B45E]/[0.05] px-3.5 py-3 text-[10px] leading-5 text-[#E9B45E]">
+              A contract address is present, but live reads are blocked. Fix the environment
+              blockers below; this page will not display a fake state while the read is unavailable.
+            </div>
+          )}
+        </section>
 
         <div className="flex items-start gap-2 rounded-xl border border-[#E9B45E]/30 bg-[#E9B45E]/[0.06] px-4 py-3 text-[11px] leading-5 text-[#E9B45E]">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -569,6 +645,64 @@ export default function Testnet() {
                     </p>
                     <p>Expires {formatDateTime(chainTime(state.latestWithdrawal.expiresAt))}</p>
                   </div>
+                  <Timeline
+                    className="mt-4"
+                    ariaLabel={`Withdrawal ${state.latestWithdrawal.id} progress`}
+                    steps={[
+                      {
+                        key: "request",
+                        title: "Request submitted",
+                        description: "Read from the contract's withdrawal record.",
+                        state: "complete",
+                      },
+                      {
+                        key: "delay",
+                        title: "Waiting period",
+                        description:
+                          now >= chainTime(state.latestWithdrawal.executeAfter)
+                            ? "The contract delay has elapsed."
+                            : "The contract timestamp is authoritative.",
+                        timestamp: formatDateTime(chainTime(state.latestWithdrawal.executeAfter)),
+                        state:
+                          now >= chainTime(state.latestWithdrawal.executeAfter)
+                            ? "complete"
+                            : "current",
+                      },
+                      ...(state.latestWithdrawal.requiresGuardians
+                        ? [
+                            {
+                              key: "approvals",
+                              title: "Guardian approvals",
+                              description: `${state.latestWithdrawal.approvals}/2 approvals recorded on-chain.`,
+                              state:
+                                state.latestWithdrawal.approvals >= 2
+                                  ? ("complete" as const)
+                                  : ("current" as const),
+                            },
+                          ]
+                        : []),
+                      {
+                        key: "execution",
+                        title: state.latestWithdrawal.executed
+                          ? "Executed"
+                          : state.latestWithdrawal.cancelled
+                            ? "Cancelled"
+                            : now > chainTime(state.latestWithdrawal.expiresAt)
+                              ? "Expired"
+                              : "Execution pending",
+                        description: state.latestWithdrawal.executed
+                          ? "The contract records this withdrawal as executed."
+                          : state.latestWithdrawal.cancelled
+                            ? "The request was cancelled before execution."
+                            : "A submitted transaction is not treated as executed until the contract state changes.",
+                        state: state.latestWithdrawal.executed
+                          ? "complete"
+                          : state.latestWithdrawal.cancelled || now > chainTime(state.latestWithdrawal.expiresAt)
+                            ? "failed"
+                            : "pending",
+                      },
+                    ] satisfies TimelineStep[]}
+                  />
                 </div>
               )}
             </div>

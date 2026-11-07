@@ -17,9 +17,9 @@ export const TONE_STYLES: Record<
 > = {
   safe: {
     text: "text-[#79E8BD]",
-    bg: "bg-[#57D5A5]/10",
-    border: "border-[#57D5A5]/30",
-    dot: "bg-[#57D5A5]",
+    bg: "bg-[#56D6A4]/10",
+    border: "border-[#56D6A4]/30",
+    dot: "bg-[#56D6A4]",
   },
   warn: {
     text: "text-[#E9B45E]",
@@ -28,10 +28,10 @@ export const TONE_STYLES: Record<
     dot: "bg-[#E9B45E]",
   },
   danger: {
-    text: "text-[#F17676]",
-    bg: "bg-[#F17676]/10",
-    border: "border-[#F17676]/35",
-    dot: "bg-[#F17676]",
+    text: "text-[#EF7777]",
+    bg: "bg-[#EF7777]/10",
+    border: "border-[#EF7777]/35",
+    dot: "bg-[#EF7777]",
   },
   info: {
     text: "text-[#79A9E8]",
@@ -40,10 +40,10 @@ export const TONE_STYLES: Record<
     dot: "bg-[#79A9E8]",
   },
   neutral: {
-    text: "text-[#94ACA0]",
+    text: "text-[#ADC8BA]",
     bg: "bg-white/[0.04]",
-    border: "border-[#28483B]",
-    dot: "bg-[#94ACA0]",
+    border: "border-[#305647]",
+    dot: "bg-[#ADC8BA]",
   },
 };
 
@@ -74,6 +74,21 @@ export function formatFullAmount(value: string | undefined): string {
 export function timeAgo(timestamp: number | undefined): string {
   if (!timestamp) return "—";
   return `${formatDistanceToNowStrict(new Date(timestamp))} ago`;
+}
+
+/** Compact countdown for timelocks. Never treats a future timestamp as passed. */
+export function formatRemaining(target: number, now = Date.now()): string {
+  const remaining = Math.max(0, target - now);
+  if (remaining === 0) return "ready";
+  const seconds = Math.ceil(remaining / 1000);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
+  return `${secs}s`;
 }
 
 export function formatDateTime(timestamp: number | undefined): string {

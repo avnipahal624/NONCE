@@ -41,11 +41,11 @@ import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 const NAV = [
-  { label: "Home", to: "/dashboard", icon: LayoutDashboard },
-  { label: "My Vault", to: "/vault", icon: Vault },
+  { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
+  { label: "Vault", to: "/vault", icon: Vault },
   { label: "Protection", to: "/protection", icon: ShieldCheck },
-  { label: "Activity", to: "/activity", icon: Activity },
-  { label: "Recovery", to: "/recovery", icon: Users },
+  { label: "Response Center", to: "/activity", icon: Activity },
+  { label: "Guardians", to: "/recovery", icon: Users },
   { label: "Testnet", to: "/testnet", icon: FlaskConical },
   { label: "Settings", to: "/settings", icon: SettingsIcon },
 ];
@@ -67,6 +67,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const protection = workspace?.protection;
   const tone = protectionTone(protection?.level ?? "UNCONFIGURED");
   const isDemo = workspace?.vault?.mode === "DEMO" || !workspace?.vault;
+  const isLiveConfirmed =
+    workspace?.vault?.mode !== "DEMO" &&
+    workspace?.vault?.deploymentStatus === "CONFIRMED";
+  const environmentLabel = isDemo ? "Sandbox" : isLiveConfirmed ? "Live" : "Unverified";
+  const environmentTone = isDemo ? "warn" : isLiveConfirmed ? "safe" : "neutral";
 
   const handleSignOut = async () => {
     await signOut();
@@ -110,9 +115,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                         )}
                       />
                       {item.label}
-                      {item.to === "/protection" &&
+                      {item.to === "/activity" &&
                         workspace?.activeIncident && (
-                          <span className="ml-auto size-1.5 rounded-full bg-[#F17676]" aria-label="Open incident" />
+                          <span
+                            className="ml-auto flex size-4 items-center justify-center rounded-full bg-[#EF7777]/15 text-[8px] font-semibold text-[#EF7777]"
+                            aria-label="Open incident"
+                          >
+                            1
+                          </span>
                         )}
                     </>
                   )}
@@ -137,9 +147,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {isLoading ? "Checking protection" : protection?.label ?? "Not configured"}
                 </p>
                 <p className="mt-0.5 text-[10px] leading-4 text-sage">
-                  {workspace?.vault
-                    ? "Demo environment · simulated safeguards"
-                    : "Create a sandbox vault to begin."}
+                  {!workspace?.vault
+                    ? "Create a sandbox vault to begin."
+                    : isLiveConfirmed
+                      ? "Live contract · on-chain controls"
+                      : isDemo
+                        ? "Sandbox · simulated controls"
+                        : "Deployment unverified"}
                 </p>
               </div>
             </div>
@@ -195,17 +209,36 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden items-center gap-2 rounded-full border border-hairline/80 bg-black/25 px-3 py-1.5 sm:flex">
+              <div className="hidden items-center gap-2 rounded-full border border-hairline/80 bg-black/25 px-3 py-1.5 md:flex">
                 <span className="flex size-4 items-center justify-center rounded-full bg-[#79A9E8]/15">
                   <span className="size-1.5 rounded-full bg-[#79A9E8]" />
                 </span>
                 <span className="text-[11px] text-ivory/90">Base Sepolia</span>
-                {isDemo && (
-                  <span className="rounded-sm border border-[#E9B45E]/30 bg-[#E9B45E]/10 px-1 py-0.5 text-[8px] uppercase tracking-wider text-[#E9B45E]">
-                    demo
-                  </span>
-                )}
+                <span
+                  className={cn(
+                    "rounded-sm border px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider",
+                    environmentTone === "safe"
+                      ? "border-mint/30 bg-mint/10 text-mint"
+                      : environmentTone === "warn"
+                        ? "border-[#E9B45E]/30 bg-[#E9B45E]/10 text-[#E9B45E]"
+                        : "border-hairline bg-white/[0.03] text-sage",
+                  )}
+                >
+                  {environmentLabel}
+                </span>
               </div>
+
+              {workspace?.wallet?.address && (
+                <div className="hidden items-center rounded-full border border-hairline/80 bg-black/20 px-3 py-1.5 xl:flex">
+                  <Address
+                    value={workspace.wallet.address}
+                    lead={5}
+                    tail={4}
+                    className="text-[10px]"
+                    label="Wallet"
+                  />
+                </div>
+              )}
 
               <NotificationsPopover />
               <AccountMenu
@@ -222,7 +255,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="border-t border-[#E9B45E]/15 bg-[#E9B45E]/[0.05]">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2 text-[10px] text-[#E9B45E]/90 sm:px-6 lg:px-8">
                 <span className="rounded-sm border border-[#E9B45E]/30 px-1.5 py-0.5 font-medium uppercase tracking-wider">
-                  Demo environment
+                  Sandbox environment
                 </span>
                 <span>
                   Balances, transfers, monitoring and lockdown execution are simulated. No
@@ -422,20 +455,79 @@ function AccountMenu({
 }
 
 export function NoVaultYet() {
+  const steps = [
+    {
+      icon: Vault,
+      title: "Create the vault",
+      detail: "Attach the signer you control. The sandbox never asks for a private key or seed phrase.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Set the rules",
+      detail: "Choose withdrawal limits, a mandatory delay and the guardian quorum for large transfers.",
+    },
+    {
+      icon: Users,
+      title: "Add recovery",
+      detail: "Confirm three guardians so two can replace a lost or compromised signer after the delay.",
+    },
+    {
+      icon: Activity,
+      title: "Watch for signals",
+      detail: "Decoys and monitor health turn suspicious activity into an explicit response workflow.",
+    },
+  ];
+
   return (
-    <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/70 p-8 text-center">
-      <div className="mx-auto flex size-12 items-center justify-center rounded-xl border border-mint/20 bg-mint/[0.07] text-mint">
-        <Vault className="size-5" />
+    <section className="overflow-hidden rounded-2xl border border-hairline/80 bg-[linear-gradient(145deg,#0c241b_0%,#071912_55%,#0a1e16_100%)]">
+      <div className="nonce-shell-grid relative px-5 py-8 sm:px-8 sm:py-10">
+        <div className="relative max-w-2xl">
+          <div className="flex size-12 items-center justify-center rounded-xl border border-mint/25 bg-mint/[0.08] text-mint">
+            <Vault className="size-5" />
+          </div>
+          <p className="mt-5 text-[10px] font-medium uppercase tracking-[0.22em] text-mint/80">
+            Start here
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ivory sm:text-[30px]">
+            No vault is configured on this account
+          </h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-sage">
+            NONCE will not show a protection claim until the vault, withdrawal rules, guardian
+            quorum and monitoring state actually exist. The onboarding flow creates a sandbox
+            environment first; live Base Sepolia actions stay separate.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Button
+              asChild
+              className="h-10 rounded-lg bg-mint px-5 text-xs font-semibold text-[#04241a] hover:bg-mint-bright"
+            >
+              <Link to="/onboarding">Create a sandbox vault</Link>
+            </Button>
+            <Link
+              to="/how-it-works"
+              className="text-[11px] text-sage underline-offset-4 hover:text-ivory hover:underline"
+            >
+              See how the safeguards fit together
+            </Link>
+          </div>
+        </div>
       </div>
-      <h2 className="mt-5 text-lg font-semibold text-ivory">No vault on this account yet</h2>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-sage">
-        Protection status stays incomplete until a vault, withdrawal policy, three guardians
-        and decoy monitoring exist. The onboarding flow walks through each one.
-      </p>
-      <Button asChild className="mt-6 h-10 rounded-full bg-mint px-6 text-[#04241a] hover:bg-mint-bright">
-        <Link to="/onboarding">Create a sandbox vault</Link>
-      </Button>
-    </div>
+      <div className="grid border-t border-hairline/60 sm:grid-cols-2 xl:grid-cols-4">
+        {steps.map((step, index) => (
+          <div
+            key={step.title}
+            className="border-b border-hairline/50 p-5 last:border-b-0 sm:border-r sm:last:border-r-0 xl:border-b-0"
+          >
+            <div className="flex items-center justify-between">
+              <step.icon className="size-4 text-mint/80" />
+              <span className="font-mono text-[9px] text-sage/50">0{index + 1}</span>
+            </div>
+            <p className="mt-3 text-[12px] font-medium text-ivory">{step.title}</p>
+            <p className="mt-1 text-[10px] leading-5 text-sage">{step.detail}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

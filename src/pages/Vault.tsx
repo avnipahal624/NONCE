@@ -19,8 +19,10 @@ import { Address } from "@/components/nonce/Address";
 import { PolicyDialog } from "@/components/nonce/PolicyDialog";
 import { PolicyProposals } from "@/components/nonce/PolicyProposals";
 import { DepositDialog, WithdrawDialog } from "@/components/nonce/AssetActions";
+import { WithdrawalTimeline } from "@/components/nonce/WithdrawalTimeline";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useNow } from "@/hooks/use-now";
 import { cn } from "@/lib/utils";
 import { formatAmount, formatDateTime, formatTime, timeAgo, vaultStateCopy } from "@/lib/nonce";
 import type { Tone } from "@/lib/nonce";
@@ -53,6 +55,7 @@ export default function VaultPage() {
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const now = useNow(30_000);
 
   if (isLoading) {
     return (
@@ -81,7 +84,6 @@ export default function VaultPage() {
     (request) => !["QUEUED", "AWAITING_GUARDIANS", "READY"].includes(request.status),
   );
   const confirmedGuardians = workspace.guardians.filter((guardian) => guardian.status === "CONFIRMED");
-  const now = Date.now();
   const ethSpent24h = (withdrawals ?? [])
     .filter((request) => {
       if (request.symbol !== "ETH") return false;
@@ -192,7 +194,7 @@ export default function VaultPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/80 p-5">
+          <div id="policy" className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/80 p-5">
             <div className="flex items-center justify-between gap-2">
               <SectionLabel>Withdrawal policy</SectionLabel>
               <PolicyDialog vaultId={vault._id} policy={policy}>
@@ -392,6 +394,12 @@ export default function VaultPage() {
                         </Button>
                       )}
                     </div>
+                  </div>
+                  <div className="mt-4 border-t border-hairline/40 pt-4">
+                    <p className="text-[9px] font-medium uppercase tracking-[0.16em] text-sage">
+                      Request journey
+                    </p>
+                    <WithdrawalTimeline request={request} className="mt-4" />
                   </div>
                 </li>
               ))}

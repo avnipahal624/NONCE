@@ -19,9 +19,11 @@ import { AppShell } from "@/components/nonce/AppShell";
 import { EmptyState, PageHeader, SectionLabel } from "@/components/nonce/PageHeader";
 import { StatusPill } from "@/components/nonce/StatusPill";
 import { Address } from "@/components/nonce/Address";
+import { Timeline, type TimelineStep } from "@/components/nonce/Timeline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  explorerTx,
   formatDateTime,
   incidentLabel,
   incidentTone,
@@ -80,6 +82,75 @@ export default function IncidentDetail() {
   const latestLockdown = lockdownRequests[0];
   const locked = vaultState === "LOCKDOWN" || vaultState === "RECOVERY";
   const closed = incident.status === "RESOLVED" || incident.status === "FALSE_POSITIVE";
+  const reviewedAt = incident.closedAt ?? incident.acknowledgedAt;
+  const timelineSteps: TimelineStep[] = [
+    {
+      key: "detected",
+      title: "Suspicious interaction detected",
+      description: incident.triggerReason,
+      timestamp: formatDateTime(incident.detectedAt),
+      state: "complete",
+    },
+    {
+      key: "alert",
+      title: "Security alert generated",
+      description: `Incident ${incident.reference} recorded with an evidence hash.`,
+      timestamp: incident.verifiedAt ? formatDateTime(incident.verifiedAt) : undefined,
+      state: "complete",
+    },
+    {
+      key: "response",
+      title: "Authorized response requested",
+      description: latestLockdown
+        ? "A freeze request exists; submission and confirmation are tracked separately."
+        : "No freeze request is recorded for this incident.",
+      timestamp: latestLockdown ? formatDateTime(latestLockdown.requestedAt) : undefined,
+      state: latestLockdown ? "complete" : "pending",
+    },
+    {
+      key: "submitted",
+      title: "Freeze transaction submitted",
+      description: latestLockdown
+        ? `${latestLockdown.mode} path · attempt ${latestLockdown.attempt}`
+        : "Nothing has been submitted.",
+      timestamp: latestLockdown?.submittedAt
+        ? formatDateTime(latestLockdown.submittedAt)
+        : undefined,
+      state: latestLockdown?.submittedAt
+        ? "complete"
+        : latestLockdown
+          ? "current"
+          : "pending",
+    },
+    {
+      key: "confirmed",
+      title: "Freeze confirmed on-chain",
+      description:
+        latestLockdown?.status === "CONFIRMED"
+          ? "The vault state is confirmed frozen by the contract evidence."
+          : latestLockdown?.status === "FAILED"
+            ? latestLockdown.failureReason ?? "The submission failed. The vault is not called frozen."
+            : "A submitted transaction is not a confirmed freeze.",
+      timestamp: latestLockdown?.confirmedAt
+        ? formatDateTime(latestLockdown.confirmedAt)
+        : undefined,
+      state:
+        latestLockdown?.status === "CONFIRMED"
+          ? "complete"
+          : latestLockdown?.status === "FAILED"
+            ? "failed"
+            : "pending",
+    },
+    {
+      key: "reviewed",
+      title: "Incident reviewed",
+      description: reviewedAt
+        ? incident.resolutionNote ?? "Acknowledged by the vault owner."
+        : "No owner review has been recorded.",
+      timestamp: reviewedAt ? formatDateTime(reviewedAt) : undefined,
+      state: closed ? "complete" : reviewedAt ? "current" : "pending",
+    },
+  ];
 
   const run = async (id: string, fn: () => Promise<unknown>, success?: string) => {
     setBusy(id);
@@ -115,6 +186,30 @@ export default function IncidentDetail() {
           }
         />
 
+        <section className="rounded-2xl border border-hairline/70 bg-[#0b1f17]/75 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <SectionLabel>Response timeline</SectionLabel>
+              <p className="mt-1 text-[10px] text-sage">
+                A stage is complete only when the corresponding record or timestamp exists.
+              </p>
+            </div>
+            <StatusPill
+              label={latestLockdown ? `Freeze ${latestLockdown.status.toLowerCase()}` : "No freeze request"}
+              tone={
+                latestLockdown?.status === "CONFIRMED"
+                  ? "danger"
+                  : latestLockdown?.status === "FAILED"
+                    ? "danger"
+                    : latestLockdown
+                      ? "warn"
+                      : "neutral"
+              }
+            />
+          </div>
+          <Timeline steps={timelineSteps} className="mt-5" ariaLabel="Incident response progress" />
+        </section>
+
         <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
           <div className="space-y-4">
             <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/80 p-5">
@@ -149,6 +244,12 @@ export default function IncidentDetail() {
                       ) : (
                         "None linked"
                       )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[9px] uppercase tracking-[0.16em] text-sage">Detection source</dt>
+                    <dd className="mt-1 text-[11px] text-ivory/85">
+                      {evidence[0]?.source === "ONCHAIN" ? "On-chain monitor evidence" : "Sandbox monitor evidence"}
                     </dd>
                   </div>
                   <div>
@@ -259,7 +360,18 @@ export default function IncidentDetail() {
                         <span>Block {entry.blockNumber.toLocaleString()}</span>
                         <span>Log {entry.logIndex}</span>
                         <span>{formatDateTime(entry.observedAt)}</span>
-                        <span>{entry.txHash ? `Tx ${entry.txHash.slice(0, 12)}…` : "No transaction hash"}</span>
+                        {entry.source === "ONCHAIN" && entry.txHash ? (
+                          <a
+                            href={explorerTx(entry.txHash)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-mint underline-offset-4 hover:underline"
+                          >
+                            Tx {entry.txHash.slice(0, 12)}…
+                          </a>
+                        ) : (
+                          <span>{entry.txHash ? `Tx ${entry.txHash.slice(0, 12)}…` : "No transaction hash"}</span>
+                        )}
                       </div>
                     </li>
                   ))}
@@ -318,6 +430,34 @@ export default function IncidentDetail() {
           </div>
 
           <div className="space-y-4">
+            <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/80 p-5">
+              <div className="flex items-center justify-between gap-2">
+                <SectionLabel>Response authority</SectionLabel>
+                <Lock className="size-3.5 text-[#E9B45E]" />
+              </div>
+              <p className="mt-2 text-[10px] leading-5 text-sage">
+                NONCE records the incident and can request a sandbox response. It cannot sign for
+                the monitor, unfreeze the vault, or approve recovery. Those are contract-authorized
+                wallet actions.
+              </p>
+              <div className="mt-3 space-y-2">
+                <div className="flex gap-2 rounded-lg border border-hairline/50 bg-black/15 px-3 py-2">
+                  <Siren className="mt-0.5 size-3 shrink-0 text-[#E9B45E]" />
+                  <p className="text-[9px] leading-4 text-sage">
+                    On testnet, only the configured monitor can freeze. A sandbox freeze request is
+                    labelled simulated and does not move the live contract.
+                  </p>
+                </div>
+                <div className="flex gap-2 rounded-lg border border-hairline/50 bg-black/15 px-3 py-2">
+                  <ShieldCheck className="mt-0.5 size-3 shrink-0 text-mint/70" />
+                  <p className="text-[9px] leading-4 text-sage">
+                    A confirmed freeze is a contract state. A submitted hash or an acknowledged
+                    incident is not enough.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-hairline/70 bg-[#0b1c16]/80 p-5">
               <div className="flex items-center justify-between">
                 <SectionLabel>Vault state</SectionLabel>

@@ -77,7 +77,7 @@ forge script script/Deploy.s.sol:DeployNONCEVault \
 | Deploy simulation | Successful; 5,537,656 gas; 0.000060914216 ETH at observed fork fees; no broadcast |
 | Frontend typecheck/build | Passed |
 | Backend policy tests | 8 passed |
-| Repository lint | Fails on 13 pre-existing React-hooks/template errors plus 19 warnings; changed testnet/indexer files pass targeted lint |
+| Repository lint | Fails on 10 pre-existing React-hooks/template errors plus 19 warnings; changed UI/testnet files pass targeted lint |
 
 The expanded tests specifically cover cross-request withdrawal-approval replay,
 cross-nonce recovery-approval replay, guardian recovery while the monitor freeze

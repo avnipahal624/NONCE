@@ -177,9 +177,9 @@ audited, production-ready or fully tested.
 
 - `bun tsc -p tsconfig.app.json --noEmit`, `bun tsc -b --noEmit` and
   `bun run build` — passed at the end of this work.
-- `bun run lint` — fails on 13 pre-existing React-hooks/purity errors and 19
-  warnings in template/earlier UI files; the new indexer/console and dashboard
-  integration pass a targeted run. No suppressions were added.
+- `bun run lint` — fails on 10 pre-existing React-hooks/purity and unused-symbol
+  errors and 19 warnings in template/earlier UI files; the changed redesign files
+  pass a targeted run. No suppressions were added.
 - `bun convex dev --once` — passed; functions, cron and generated types pushed
   successfully to the development deployment.
 - `forge build` — passed with Solidity 0.8.24 and the optimizer.

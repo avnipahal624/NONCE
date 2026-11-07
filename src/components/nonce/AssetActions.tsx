@@ -17,8 +17,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { StatusPill } from "./StatusPill";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { cn } from "@/lib/utils";
-import { formatAmount, formatTime } from "@/lib/nonce";
+import { formatAmount, formatTime, vaultStateCopy } from "@/lib/nonce";
 
 const withdrawSchema = z.object({
   amount: z
@@ -187,7 +188,11 @@ export function WithdrawDialog({
     executeAfter: number;
   } | null>(null);
   const requestWithdrawal = useMutation(api.nonce.withdrawals.request);
+  const { workspace } = useWorkspace();
   const asset = assets.find((entry) => entry.symbol === symbol) ?? assets[0];
+  const vaultState = workspace?.vault?.state;
+  const blockedByState = vaultState === "LOCKDOWN" || vaultState === "RECOVERY";
+  const stateCopy = vaultStateCopy(vaultState);
 
   const form = useForm<WithdrawValues>({
     resolver: zodResolver(withdrawSchema),
@@ -197,6 +202,14 @@ export function WithdrawDialog({
   const submit = form.handleSubmit(async (values) => {
     if (!asset) {
       setError("No asset is available on this vault.");
+      return;
+    }
+    if (blockedByState) {
+      setError("The vault is locked. Ordinary withdrawals are blocked until recovery completes.");
+      return;
+    }
+    if (Number(values.amount) > Number(asset.balance)) {
+      setError(`The amount exceeds the available ${asset.symbol} balance.`);
       return;
     }
     setError(null);
@@ -316,7 +329,7 @@ export function WithdrawDialog({
                     onClick={() => form.setValue("amount", asset.balance, { shouldValidate: true })}
                     className="text-[10px] text-mint hover:text-mint-bright"
                   >
-                    Use max
+                    Use max · {formatAmount(asset.balance)} {asset.symbol}
                   </button>
                 )}
               </div>
@@ -349,6 +362,29 @@ export function WithdrawDialog({
               )}
             </div>
 
+            <div
+              className={cn(
+                "rounded-lg border px-3.5 py-3",
+                blockedByState
+                  ? "border-[#EF7777]/25 bg-[#EF7777]/[0.05]"
+                  : "border-mint/20 bg-mint/[0.04]",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] uppercase tracking-[0.14em] text-sage">Freeze status</span>
+                <StatusPill
+                  label={blockedByState ? stateCopy.label : "Withdrawals open"}
+                  tone={blockedByState ? "danger" : "safe"}
+                  className="text-[9px]"
+                />
+              </div>
+              <p className="mt-1.5 text-[10px] leading-5 text-sage">
+                {blockedByState
+                  ? "A locked vault cannot queue an ordinary withdrawal. Guardian recovery is the only release path."
+                  : "The request is validated again by the backend; the displayed timer does not override its stored execution time."}
+              </p>
+            </div>
+
             {policy && (
               <div className="rounded-lg border border-hairline/70 bg-black/20 px-3.5 py-3">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-sage">
@@ -377,8 +413,8 @@ export function WithdrawDialog({
 
             <Button
               type="submit"
-              disabled={busy}
-              className="h-10 w-full rounded-lg bg-mint text-sm font-semibold text-[#04241a] hover:bg-mint-bright"
+              disabled={busy || blockedByState}
+              className="h-10 w-full rounded-lg bg-mint text-sm font-semibold text-[#04241a] hover:bg-mint-bright disabled:opacity-40"
             >
               {busy ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -388,8 +424,9 @@ export function WithdrawDialog({
                 </>
               )}
             </Button>
-            <p className="text-center text-[10px] text-sage">
-              Execution is simulated. No chain transaction is signed or broadcast.
+            <p className="text-center text-[10px] leading-4 text-sage">
+              Sandbox request only: no gas is charged and no chain transaction is signed or
+              broadcast. A live testnet withdrawal asks MetaMask to estimate gas before signing.
             </p>
           </form>
         )}

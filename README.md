@@ -20,9 +20,12 @@ shows blockers. No mainnet path exists. Do not send real assets.
 - Reproducible audit package and auditor scope: [`docs/AUDIT_PACKAGE.md`](docs/AUDIT_PACKAGE.md)
 - Actual test, fork and static-analysis results: [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
 - What is not done or tested: [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md)
+- UI redesign audit and P1 implementation record: [`docs/UI_REDESIGN.md`](docs/UI_REDESIGN.md)
+- P2 architecture (notifications, ERC-20, multi-vault, integrations): [`docs/P2_ARCHITECTURE.md`](docs/P2_ARCHITECTURE.md)
 - Reference Solidity vault and deployment steps: [`contracts/README.md`](contracts/README.md)
 - App routes: `/` marketing, `/auth`, `/onboarding`, `/dashboard`, `/vault`,
-  `/protection`, `/activity`, `/recovery`, `/testnet`, `/settings`
+  `/protection`, `/activity` (Response Center), `/activity/:incidentId`,
+  `/recovery`, `/testnet`, `/settings`
 
 Commands: `bun convex dev --once` (codegen + function push), `bun tsc -b --noEmit`
 (typecheck), `bun test tests/policyRules.test.ts` (8 backend policy tests). The
