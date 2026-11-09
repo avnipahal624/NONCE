@@ -9,23 +9,54 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import "./index.css";
 
-// Lazy load route components for better code splitting
-const Landing = lazy(() => import("./pages/Landing.tsx"));
-const HowItWorks = lazy(() => import("./pages/HowItWorks.tsx"));
-const SecurityArchitecture = lazy(() => import("./pages/SecurityArchitecture.tsx"));
-const Features = lazy(() => import("./pages/Features.tsx"));
-const Faq = lazy(() => import("./pages/Faq.tsx"));
-const AuthPage = lazy(() => import("./pages/Auth.tsx"));
-const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
-const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
-const Vault = lazy(() => import("./pages/Vault.tsx"));
-const Protection = lazy(() => import("./pages/Protection.tsx"));
-const Activity = lazy(() => import("./pages/Activity.tsx"));
-const IncidentDetail = lazy(() => import("./pages/IncidentDetail.tsx"));
-const Recovery = lazy(() => import("./pages/Recovery.tsx"));
-const Settings = lazy(() => import("./pages/Settings.tsx"));
-const Testnet = lazy(() => import("./pages/Testnet.tsx"));
-const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+// Lazy load route components for better code splitting. If the dev server is
+// restarting or a production chunk was replaced, reload once instead of
+// leaving the preview on "Failed to fetch dynamically imported module".
+type RouteLoader = Parameters<typeof lazy>[0];
+
+function lazyRoute(name: string, load: RouteLoader) {
+  return lazy(async () => {
+    try {
+      const route = await load();
+      clearRouteRetry(name);
+      return route;
+    } catch (error) {
+      const url = new URL(window.location.href);
+      // A query parameter persists across the reload without relying on
+      // storage, which can be blocked inside a sandboxed preview iframe.
+      if (url.searchParams.get("routeRetry") !== name) {
+        url.searchParams.set("routeRetry", name);
+        window.location.replace(url.toString());
+      }
+      throw error;
+    }
+  });
+}
+
+function clearRouteRetry(name: string) {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("routeRetry") === name) {
+    url.searchParams.delete("routeRetry");
+    window.history.replaceState(window.history.state, "", url);
+  }
+}
+
+const Landing = lazyRoute("landing", () => import("./pages/Landing.tsx"));
+const HowItWorks = lazyRoute("how-it-works", () => import("./pages/HowItWorks.tsx"));
+const SecurityArchitecture = lazyRoute("security", () => import("./pages/SecurityArchitecture.tsx"));
+const Features = lazyRoute("features", () => import("./pages/Features.tsx"));
+const Faq = lazyRoute("faq", () => import("./pages/Faq.tsx"));
+const AuthPage = lazyRoute("auth", () => import("./pages/Auth.tsx"));
+const Onboarding = lazyRoute("onboarding", () => import("./pages/Onboarding.tsx"));
+const Dashboard = lazyRoute("dashboard", () => import("./pages/Dashboard.tsx"));
+const Vault = lazyRoute("vault", () => import("./pages/Vault.tsx"));
+const Protection = lazyRoute("protection", () => import("./pages/Protection.tsx"));
+const Activity = lazyRoute("activity", () => import("./pages/Activity.tsx"));
+const IncidentDetail = lazyRoute("incident", () => import("./pages/IncidentDetail.tsx"));
+const Recovery = lazyRoute("recovery", () => import("./pages/Recovery.tsx"));
+const Settings = lazyRoute("settings", () => import("./pages/Settings.tsx"));
+const Testnet = lazyRoute("testnet", () => import("./pages/Testnet.tsx"));
+const NotFound = lazyRoute("not-found", () => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
