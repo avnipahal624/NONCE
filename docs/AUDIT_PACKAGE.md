@@ -1,5 +1,9 @@
 # NONCE audit package
 
+> **Historical package (5 November 2026).** Current measured results are in
+> [`NONCE_TEST_RESULTS.md`](./NONCE_TEST_RESULTS.md): **53 contract tests**,
+> **22 Bun tests**, lint **0 errors / 19 warnings**, and **no deployment**.
+
 **Prepared:** 5 November 2026  
 **Contract:** `contracts/NONCEVault.sol`  
 **Status:** internal, pre-deployment package. **No independent audit has been
@@ -14,7 +18,7 @@ hashes identify the reviewed source instead:
 ```text
 b75741a27a40ef2aa936411a469445dc400b477088aef76fdf90ff43521ecfce  contracts/NONCEVault.sol
 4536c865918c956cddc96ec60987658531da0c5d025c9ce7cc409fe08e0c0dd8  contracts/script/Deploy.s.sol
-45e966523148a1e2eb09a56d8f7aa41576d8fc9cae97885798d7750457d0e696  contracts/test/NONCEVault.t.sol
+a10bf0845c79af63cba1ab4d4f31d39711beb4bb7e10247b6117137ab3665262  contracts/test/NONCEVault.t.sol
 a00e2d54157178c429d88f21fe370621c365eb63e0fd101545b20000c8263fc6  contracts/test/NONCEVault.fork.t.sol
 1552b56a73d8d11260865fe1a3ac610b3f31e4472f34319447f1f1b8447e2606  contracts/foundry.toml
 ```
@@ -52,7 +56,7 @@ slither . --filter-paths "lib|test|script"
 cd ..
 bun tsc -b --noEmit
 bun run build
-bun test tests/policyRules.test.ts
+bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts
 bun convex dev --once
 ```
 
@@ -69,15 +73,15 @@ forge script script/Deploy.s.sol:DeployNONCEVault \
 | Check | Result |
 | --- | --- |
 | `forge build` | Passed |
-| `forge test -vvv` | **50 passed, 0 failed** (49 unit/invariant + 1 fork) |
-| `forge test --fork-url ...` | **50 passed, 0 failed** |
+| `forge test -vvv` | **53 passed, 0 failed** (52 unit/invariant + 1 fork) |
+| `forge test --fork-url ...` | **53 passed, 0 failed** |
 | Invariants | 3 properties, 256 runs, 128,000 calls, 0 reverts |
 | Fuzz tests | 256 runs per fuzz test |
-| Slither | 82 contracts, 102 detectors, 13 informational, no high/medium |
+| Slither | 82 contracts, 102 detectors, 13 results (10 Low, 3 Informational), no high/medium |
 | Deploy simulation | Successful; 5,537,656 gas; 0.000060914216 ETH at observed fork fees; no broadcast |
 | Frontend typecheck/build | Passed |
-| Backend policy tests | 8 passed |
-| Repository lint | Fails on 10 pre-existing React-hooks/template errors plus 19 warnings; changed UI/testnet files pass targeted lint |
+| Backend/unit tests | 22 passed |
+| Repository lint | **Passes**: 0 errors, 19 Fast Refresh/generated-directive warnings |
 
 The expanded tests specifically cover cross-request withdrawal-approval replay,
 cross-nonce recovery-approval replay, guardian recovery while the monitor freeze
@@ -181,7 +185,7 @@ assumptions, with severity-ranked findings and a remediation re-check.
 2. Constructor validation and the deploy script's role/policy inputs, chain ID
    guard, and verification procedure.
 3. The invariant list above, using an independent harness and independent fuzz/
-   invariant seeds. Reproduce and challenge the existing 50-test suite.
+   invariant seeds. Reproduce and challenge the existing 53-test suite.
 4. Deployment assumptions: 2-of-3 guardians, monitor freeze-only authority,
    EOA owner, ETH-only custody, and no upgrade/sweep path.
 5. The backend/indexer trust boundary only to confirm it cannot sign or move

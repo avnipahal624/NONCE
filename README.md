@@ -11,6 +11,12 @@ reads live state, submits wallet-signed transactions, and indexes confirmed logs
 with a Convex worker only when deployment configuration exists; otherwise it
 shows blockers. No mainnet path exists. Do not send real assets.
 
+- Current audit and measured baseline: [`docs/NONCE_CURRENT_AUDIT.md`](docs/NONCE_CURRENT_AUDIT.md)
+- Final acceptance status and blockers: [`docs/NONCE_FINAL_AUDIT.md`](docs/NONCE_FINAL_AUDIT.md)
+- Current test results: [`docs/NONCE_TEST_RESULTS.md`](docs/NONCE_TEST_RESULTS.md)
+- Deployment verification record: [`docs/NONCE_DEPLOYMENT_VERIFICATION.md`](docs/NONCE_DEPLOYMENT_VERIFICATION.md)
+- Security limitations and residual risk: [`docs/NONCE_SECURITY_LIMITATIONS.md`](docs/NONCE_SECURITY_LIMITATIONS.md)
+- Repeatable demo script: [`docs/NONCE_DEMO_SCRIPT.md`](docs/NONCE_DEMO_SCRIPT.md)
 - Product, architecture, schema and runbook: [`docs/NONCE.md`](docs/NONCE.md)
 - Security findings and remediation: [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md)
 - Enforcement boundaries: [`docs/SECURITY_ARCHITECTURE.md`](docs/SECURITY_ARCHITECTURE.md)
@@ -28,12 +34,16 @@ shows blockers. No mainnet path exists. Do not send real assets.
   `/recovery`, `/testnet`, `/settings`
 
 Commands: `bun convex dev --once` (codegen + function push), `bun tsc -b --noEmit`
-(typecheck), `bun test tests/policyRules.test.ts` (8 backend policy tests). The
-platform runs codegen and typecheck after each change; do not start dev servers.
-Contract checks: `cd contracts && forge build && forge test -vvv`. The suite has
-**49 passing unit/invariant tests plus 1 fork test**, but there is still no
-Base Sepolia deployment; see the test report and deployment guide before
-claiming any on-chain result.
+(typecheck), and `bun test tests/policyRules.test.ts tests/wallet.test.ts
+tests/testnetConfig.test.ts tests/testnetWallet.test.ts` (22 backend/unit tests).
+The platform runs codegen and typecheck after each change; do not start dev
+servers. Contract checks: `cd contracts && forge build && forge test -vvv`. The
+suite has **52 passing unit/invariant tests plus 1 fork test (53 total)**, but
+there is still no Base Sepolia deployment; see
+[`docs/NONCE_CURRENT_AUDIT.md`](docs/NONCE_CURRENT_AUDIT.md),
+[`docs/NONCE_TEST_RESULTS.md`](docs/NONCE_TEST_RESULTS.md) and
+[`docs/NONCE_DEPLOYMENT_VERIFICATION.md`](docs/NONCE_DEPLOYMENT_VERIFICATION.md)
+before claiming any on-chain result.
 
 ---
 

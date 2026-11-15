@@ -19,8 +19,20 @@ export function getInjectedWallet(): Eip1193Provider | null {
 }
 
 export function humanizeWalletError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  if (/user rejected|denied/i.test(message)) return "The wallet request was rejected.";
+  const record =
+    typeof error === "object" && error !== null
+      ? (error as { code?: unknown; message?: unknown })
+      : null;
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof record?.message === "string"
+        ? record.message
+        : String(error);
+  const code = typeof record?.code === "number" ? record.code : null;
+  if (code === 4001 || /user rejected|denied/i.test(message)) {
+    return "The wallet request was rejected.";
+  }
   if (/no ethereum|not installed/i.test(message)) return "No browser wallet was found.";
   if (/chain/i.test(message)) return "Switch your wallet to Base Sepolia and try again.";
   return message;

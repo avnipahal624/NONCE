@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Clock, Loader2, ShieldCheck, TriangleAlert } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
@@ -15,6 +15,17 @@ import {
 } from "@/components/ui/dialog";
 import { isValidAddress } from "@/lib/wallet";
 
+function policyForm(policy: Doc<"withdrawalPolicies"> | null) {
+  return {
+    maxPerTransaction: policy?.maxPerTransaction ?? "1",
+    rollingLimit: policy?.rollingLimit ?? "2.5",
+    largeWithdrawalThreshold: policy?.largeWithdrawalThreshold ?? "0.25",
+    delayMinutes: policy?.delayMinutes ?? 30,
+    allowlistOnly: policy?.allowlistOnly ?? false,
+    allowlist: policy?.allowlist.join(", ") ?? "",
+  };
+}
+
 export function PolicyDialog({
   vaultId,
   policy,
@@ -30,26 +41,7 @@ export function PolicyDialog({
   const [saved, setSaved] = useState(false);
   const propose = useMutation(api.nonce.policy.propose);
 
-  const [form, setForm] = useState({
-    maxPerTransaction: "1",
-    rollingLimit: "2.5",
-    largeWithdrawalThreshold: "0.25",
-    delayMinutes: 30,
-    allowlistOnly: false,
-    allowlist: "",
-  });
-
-  useEffect(() => {
-    if (!policy) return;
-    setForm({
-      maxPerTransaction: policy.maxPerTransaction,
-      rollingLimit: policy.rollingLimit ?? "2.5",
-      largeWithdrawalThreshold: policy.largeWithdrawalThreshold,
-      delayMinutes: policy.delayMinutes,
-      allowlistOnly: policy.allowlistOnly,
-      allowlist: policy.allowlist.join(", "),
-    });
-  }, [policy, open]);
+  const [form, setForm] = useState(() => policyForm(policy));
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -106,6 +98,7 @@ export function PolicyDialog({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        if (next) setForm(policyForm(policy));
         if (!next) {
           setSaved(false);
           setError(null);

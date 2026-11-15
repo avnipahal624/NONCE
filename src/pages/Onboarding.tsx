@@ -33,7 +33,6 @@ import {
   connectInjectedWallet,
   generateSandboxAddress,
   getInjectedWallet,
-  humanizeWalletError,
   isValidAddress,
   signChallenge,
   switchToBaseSepolia,
@@ -78,7 +77,7 @@ export default function Onboarding() {
     { label: "Family vault", address: generateSandboxAddress() },
     { label: "Trusted advisor", address: generateSandboxAddress() },
   ]);
-  const [decoyLabels, setDecoyLabels] = useState(["Reserve wallet", "DeFi decoy", "Cold storage decoy"]);
+  const decoyLabels = ["Reserve wallet", "DeFi decoy", "Cold storage decoy"];
 
   const initialized = useRef(false);
 
@@ -105,21 +104,30 @@ export default function Onboarding() {
   useEffect(() => {
     if (!workspace || initialized.current) return;
     initialized.current = true;
-    if (!workspace.wallet) setStep(0);
-    else if (workspace.wallet.verification === "DEMO_SIGNER") setStep(1);
-    else if (!workspace.vault) setStep(2);
-    else setStep(7);
+    const nextStep = !workspace.wallet
+      ? 0
+      : workspace.wallet.verification === "DEMO_SIGNER"
+        ? 1
+        : !workspace.vault
+          ? 2
+          : 7;
+    // Defer the one-time server-state hydration so the effect does not cause a
+    // synchronous cascading render.
+    queueMicrotask(() => setStep(nextStep));
   }, [workspace]);
 
   useEffect(() => {
-    if (!workspace?.policy) return;
-    setPolicy({
-      maxPerTransaction: workspace.policy.maxPerTransaction,
-      largeWithdrawalThreshold: workspace.policy.largeWithdrawalThreshold,
-      delayMinutes: workspace.policy.delayMinutes,
-      allowlistOnly: workspace.policy.allowlistOnly,
-      allowlist: workspace.policy.allowlist.join(", "),
-    });
+    const next = workspace?.policy;
+    if (!next) return;
+    queueMicrotask(() =>
+      setPolicy({
+        maxPerTransaction: next.maxPerTransaction,
+        largeWithdrawalThreshold: next.largeWithdrawalThreshold,
+        delayMinutes: next.delayMinutes,
+        allowlistOnly: next.allowlistOnly,
+        allowlist: next.allowlist.join(", "),
+      }),
+    );
   }, [workspace?.policy]);
 
   const activeGuardianAddresses = useMemo(
@@ -745,7 +753,7 @@ export default function Onboarding() {
                   description="Decoy addresses have no vault role. Anything meaningful happening at one is evidence that someone is using a key they should not have. Inbound spam is treated as noise, never as a reason to freeze."
                 >
                   <div className="space-y-3">
-                    {decoyLabels.map((label, index) => {
+                    {decoyLabels.map((label) => {
                       const existing = workspace.decoys.find((decoy) => decoy.label === label);
                       return (
                         <div

@@ -13,7 +13,7 @@ The app never uses mainnet. Do not put real assets in this contract.
 
 A deployment proves that a contract exists at an address and that its functions
 respond. It does **not** prove the code is correct. This contract is unaudited;
-its 49-test suite and Base Sepolia fork test pass locally, but that is bounded
+its 53-test suite (52 unit/invariant plus one Base Sepolia fork test) passes locally, but that is bounded
 engineering validation, not an audit. Deploy only testnet ETH and only after
 reading [`SECURITY_ARCHITECTURE.md`](./SECURITY_ARCHITECTURE.md),
 [`TEST_REPORT.md`](./TEST_REPORT.md) and [`KNOWN_LIMITATIONS.md`](./KNOWN_LIMITATIONS.md).
@@ -27,7 +27,9 @@ reading [`SECURITY_ARCHITECTURE.md`](./SECURITY_ARCHITECTURE.md),
 - Four distinct role accounts: owner, monitor, and three guardians. The
   constructor rejects zero, duplicate, owner-as-guardian and monitor-as-guardian
   configurations.
-- A Basescan API key if you want source verification.
+- A Basescan API key if you want source verification. The old Basescan V1 API
+  is deprecated; the commands below use the Etherscan V2 endpoint with
+  `chainid=84532`.
 - The Convex deployment CLI logged in to the project, if you are wiring the
   console.
 
@@ -129,7 +131,7 @@ forge script script/Deploy.s.sol:DeployNONCEVault \
   --sender "$DEPLOYER_ADDRESS" \
   --broadcast --verify \
   --verifier etherscan \
-  --verifier-url "https://api-sepolia.basescan.org/api" \
+  --verifier-url "https://api.etherscan.io/v2/api?chainid=84532" \
   --etherscan-api-key "$BASESCAN_API_KEY" \
   -vvv
 ```
@@ -140,7 +142,7 @@ For a manual source-verification retry:
 forge verify-contract "$NONCE_VAULT_ADDRESS" NONCEVault.sol:NONCEVault \
   --chain 84532 \
   --verifier etherscan \
-  --verifier-url "https://api-sepolia.basescan.org/api" \
+  --verifier-url "https://api.etherscan.io/v2/api?chainid=84532" \
   --etherscan-api-key "$BASESCAN_API_KEY" \
   --constructor-args "$(cast abi-encode \
     'constructor(address,address,address[3],uint256,uint256,uint256,uint64,uint64,uint64)' \
@@ -304,6 +306,6 @@ you observe them.
 - No Convex environment values for the contract, so the indexer cron is a no-op
   and `/testnet` shows blockers.
 
-The toolchain and local tests are available: `forge build`, 49 unit/invariant
+The toolchain and local tests are available: `forge build`, 52 unit/invariant
 tests and a Base Sepolia fork test pass, and the deploy script dry-run succeeds.
 Those facts still do not constitute a deployment.

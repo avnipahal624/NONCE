@@ -469,17 +469,28 @@ export default function Testnet() {
                   {
                     label: "Frozen",
                     value: state.frozen ? "Yes — withdrawals blocked" : "No",
+                    detail: `Monitor ${state.monitorFrozen ? "frozen" : "clear"} · recovery ${state.recoveryFrozen ? "frozen" : "clear"}`,
                     tone: state.frozen ? ("danger" as const) : ("safe" as const),
                   },
                   {
                     label: "Security epoch",
                     value: String(state.epoch),
-                    detail: "Increments on recovery / restoration",
+                    detail: "Increments only when recovery replaces the owner",
                   },
                   {
                     label: "Guardians",
                     value: `${state.guardians.filter((g) => !/^0x0{40}$/i.test(g)).length} configured`,
-                    detail: "2-of-3 approvals required",
+                    detail: `${state.guardianThreshold}-of-${state.guardianCount} approvals required`,
+                  },
+                  {
+                    label: "Immutable timelocks",
+                    value: `Policy ${Math.round(state.policyDelaySeconds / 86400)}d · recovery ${Math.round(state.recoveryDelaySeconds / 86400)}d`,
+                    detail: "Read from immutable constructor values",
+                  },
+                  {
+                    label: "Allowlist",
+                    value: `${state.allowlistCount} recipient(s)`,
+                    detail: state.policy.allowlistOnly ? "Allowlist is enforced" : "Allowlist is optional",
                   },
                   {
                     label: "Rolling allowance",
@@ -502,7 +513,7 @@ export default function Testnet() {
                     detail: `Large threshold ${state.policy.largeWithdrawalThresholdEth} ETH`,
                   },
                   {
-                    label: "Policy delay",
+                    label: "Withdrawal delay",
                     value: `${Math.round(state.policy.withdrawalDelaySeconds / 60)} min`,
                     detail: `Every request waits at least 10 min · ${state.policy.allowlistOnly ? "allowlist only" : "allowlist optional"}`,
                   },

@@ -2,9 +2,10 @@
 
 `NONCEVault.sol` is a **hardened reference implementation**, not a production
 system. It is unaudited and **not deployed from this repository**. The Foundry
-suite has been executed locally: **49 unit/invariant tests plus one Base Sepolia
-fork test pass** (see [`docs/TEST_REPORT.md`](../docs/TEST_REPORT.md)). A local
-pass is not an audit, a deployment or a guarantee of safety.
+suite has been executed locally: **52 unit/invariant tests plus one Base Sepolia
+fork test pass** (53 total; see
+[`docs/NONCE_TEST_RESULTS.md`](../docs/NONCE_TEST_RESULTS.md)). A local pass is
+not an audit, a deployment or a guarantee of safety.
 
 Full security context:
 

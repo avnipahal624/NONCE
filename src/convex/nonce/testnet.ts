@@ -18,7 +18,14 @@ const ABI = parseAbi([
   "function owner() view returns (address)",
   "function monitor() view returns (address)",
   "function frozen() view returns (bool)",
+  "function monitorFrozen() view returns (bool)",
+  "function recoveryFrozen() view returns (bool)",
   "function epoch() view returns (uint256)",
+  "function GUARDIAN_COUNT() view returns (uint8)",
+  "function GUARDIAN_THRESHOLD() view returns (uint8)",
+  "function policyDelay() view returns (uint64)",
+  "function recoveryDelay() view returns (uint64)",
+  "function allowlistCount() view returns (uint256)",
   "function guardians(uint256 index) view returns (address)",
   "function getPolicy() view returns (uint256 perTransactionLimit, uint256 largeWithdrawalThreshold, uint256 rollingLimit, uint64 withdrawalDelay, bool allowlistOnly)",
   "function reservedBalance() view returns (uint256)",
@@ -81,6 +88,15 @@ export const readVault = action({
     const address = getAddress(config.contractAddress) as Address;
 
     try {
+      const rpcChainId = await client.getChainId();
+      if (rpcChainId !== config.chainId) {
+        return {
+          ok: false as const,
+          configured: true,
+          blockers: config.blockers,
+          error: `The configured RPC returned chain ${rpcChainId}, not Base Sepolia (${config.chainId}). No contract state was trusted.`,
+        };
+      }
       const code = await client.getBytecode({ address });
       if (!code || code === "0x") {
         return {
@@ -96,7 +112,14 @@ export const readVault = action({
         owner,
         monitor,
         frozen,
+        monitorFrozen,
+        recoveryFrozen,
         epoch,
+        guardianCount,
+        guardianThreshold,
+        policyDelay,
+        recoveryDelay,
+        allowlistCount,
         guardian0,
         guardian1,
         guardian2,
@@ -113,7 +136,14 @@ export const readVault = action({
         client.readContract({ address, abi: ABI, functionName: "owner" }),
         client.readContract({ address, abi: ABI, functionName: "monitor" }),
         client.readContract({ address, abi: ABI, functionName: "frozen" }),
+        client.readContract({ address, abi: ABI, functionName: "monitorFrozen" }),
+        client.readContract({ address, abi: ABI, functionName: "recoveryFrozen" }),
         client.readContract({ address, abi: ABI, functionName: "epoch" }),
+        client.readContract({ address, abi: ABI, functionName: "GUARDIAN_COUNT" }),
+        client.readContract({ address, abi: ABI, functionName: "GUARDIAN_THRESHOLD" }),
+        client.readContract({ address, abi: ABI, functionName: "policyDelay" }),
+        client.readContract({ address, abi: ABI, functionName: "recoveryDelay" }),
+        client.readContract({ address, abi: ABI, functionName: "allowlistCount" }),
         client.readContract({
           address,
           abi: ABI,
@@ -204,6 +234,7 @@ export const readVault = action({
         observedAt: Date.now(),
         blockNumber: Number(blockNumber),
         chainId: config.chainId,
+        rpcChainId,
         contractAddress: address,
         deploymentTxHash: config.deploymentTxHash,
         verifiedOnExplorer: config.verifiedOnExplorer,
@@ -211,7 +242,14 @@ export const readVault = action({
         owner,
         monitor,
         frozen,
+        monitorFrozen,
+        recoveryFrozen,
         epoch: Number(epoch),
+        guardianCount: Number(guardianCount),
+        guardianThreshold: Number(guardianThreshold),
+        policyDelaySeconds: Number(policyDelay),
+        recoveryDelaySeconds: Number(recoveryDelay),
+        allowlistCount: Number(allowlistCount),
         guardians: [guardian0, guardian1, guardian2],
         policy: {
           perTransactionLimitWei: policy[0].toString(),
@@ -309,6 +347,14 @@ export const verifyTransaction = action({
       };
     }
     try {
+      const rpcChainId = await client.getChainId();
+      if (rpcChainId !== config.chainId) {
+        return {
+          ok: false as const,
+          status: "UNCONFIGURED" as const,
+          error: `The configured RPC returned chain ${rpcChainId}, not Base Sepolia (${config.chainId}).`,
+        };
+      }
       const receipt = await client.getTransactionReceipt({
         hash: args.txHash as `0x${string}`,
       });

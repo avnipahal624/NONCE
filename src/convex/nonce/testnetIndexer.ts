@@ -217,6 +217,12 @@ async function runSync(ctx: ActionCtx): Promise<SyncResult> {
   });
 
   try {
+    const rpcChainId = await client.getChainId();
+    if (rpcChainId !== config.chainId) {
+      throw new Error(
+        `The configured RPC returned chain ${rpcChainId}, not Base Sepolia (${config.chainId}).`,
+      );
+    }
     const code = await client.getBytecode({ address });
     if (!code || code === "0x") {
       return {

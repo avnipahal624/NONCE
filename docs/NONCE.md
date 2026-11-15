@@ -480,15 +480,15 @@ configured.
   generated types are current.
 - `bun tsc -p tsconfig.app.json --noEmit` and `bun tsc -b --noEmit` — passed, exit 0.
 - `forge build` — passed with Solidity 0.8.24 and the optimizer.
-- `forge test -vv` — 50 passed, 0 failed; 3 invariants at 256 runs / 128,000
+- `forge test -vv` — 53 passed, 0 failed; 3 invariants at 256 runs / 128,000
   calls / 0 reverts; fuzz runs at 256.
-- `forge test --fork-url https://sepolia.base.org -vv` — 50 passed, 0 failed,
+- `forge test --fork-url https://sepolia.base.org -vv` — 53 passed, 0 failed,
   including a local deploy/deposit on forked Base Sepolia state.
-- Slither 0.11.6 — 13 informational findings, no high/medium findings.
+- Slither 0.11.6 — 13 results (10 Low, 3 Informational), no high/medium findings.
 - Deploy script dry-run on a Base Sepolia fork — succeeded; **no broadcast**.
-- `bun test tests/policyRules.test.ts` — 8 passed, 0 failed. Covers aged pending
-  reservations, executed-window accounting, status exclusions, asset separation
-  and policy weakening/minimum-delay validation.
+- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts`
+  — 22 passed, 0 failed. Covers reservations and policy validation, wallet
+  errors/network switching and testnet configuration/hash validation.
 - Source inspection of schema, backend guards, recovery cancellation, policy
   execution, testnet config/read/verify/indexer and the console.
 

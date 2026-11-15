@@ -26,7 +26,10 @@ export function readTestnetConfig(): TestnetConfigView {
   const addressValid = /^0x[a-fA-F0-9]{40}$/.test(rawAddress);
   const chainId = Number(process.env.NONCE_CHAIN_ID ?? BASE_SEPOLIA_CHAIN_ID);
   const rpcConfigured = Boolean((process.env.BASE_SEPOLIA_RPC_URL ?? "").trim());
-  const deploymentTxHash = (process.env.NONCE_DEPLOYMENT_TX_HASH ?? "").trim() || null;
+  const rawDeploymentTxHash = (process.env.NONCE_DEPLOYMENT_TX_HASH ?? "").trim();
+  const deploymentTxHashValid =
+    rawDeploymentTxHash.length === 0 || /^0x[a-fA-F0-9]{64}$/.test(rawDeploymentTxHash);
+  const deploymentTxHash = deploymentTxHashValid ? rawDeploymentTxHash || null : null;
   const verifiedOnExplorer =
     (process.env.NONCE_CONTRACT_VERIFIED ?? "").toLowerCase() === "true";
   const explorerBaseUrl = (
@@ -49,7 +52,9 @@ export function readTestnetConfig(): TestnetConfigView {
       `NONCE_CHAIN_ID is ${chainId}; this build only supports Base Sepolia (${BASE_SEPOLIA_CHAIN_ID}).`,
     );
   }
-  if (!deploymentTxHash) {
+  if (rawDeploymentTxHash.length > 0 && !deploymentTxHashValid) {
+    blockers.push("NONCE_DEPLOYMENT_TX_HASH is not a 32-byte transaction hash.");
+  } else if (!deploymentTxHash) {
     blockers.push("NONCE_DEPLOYMENT_TX_HASH is not recorded.");
   }
   if (!verifiedOnExplorer) {

@@ -4,13 +4,19 @@ This document lists what this build does **not** do, what is simulated, and
 which checks were not run. It is intentionally blunt. Do not describe NONCE as
 audited, production-ready or fully tested.
 
+**Current snapshot (15 November 2026):** 53 contract tests and 22 Bun tests
+pass; lint passes with 0 errors and 19 warnings; **no Base Sepolia contract is
+deployed/configured**; Playwright is checked in but not executed. See
+[`NONCE_CURRENT_AUDIT.md`](./NONCE_CURRENT_AUDIT.md) and
+[`NONCE_SECURITY_LIMITATIONS.md`](./NONCE_SECURITY_LIMITATIONS.md).
+
 ## 1. Contract status
 
 - **Unaudited.** `contracts/NONCEVault.sol` has had an internal source review,
   not an independent security audit.
 - **Not deployed.** There is no Base Sepolia address or deployment transaction
   from this repository.
-- **Local tests pass, but remain bounded.** `forge build` succeeds; 49
+- **Local tests pass, but remain bounded.** `forge build` succeeds; 52
   unit/invariant tests and one Base Sepolia fork test pass, including 256-run
   invariant and fuzz campaigns. These are bounded engineering checks, not a
   proof, an independent audit or a deployment.
@@ -177,21 +183,22 @@ audited, production-ready or fully tested.
 
 - `bun tsc -p tsconfig.app.json --noEmit`, `bun tsc -b --noEmit` and
   `bun run build` — passed at the end of this work.
-- `bun run lint` — fails on 10 pre-existing React-hooks/purity and unused-symbol
-  errors and 19 warnings in template/earlier UI files; the changed redesign files
-  pass a targeted run. No suppressions were added.
+- `bun run lint` — **passes**: 0 errors and 19 Fast Refresh/generated-directive
+  warnings. No suppressions were added.
 - `bun convex dev --once` — passed; functions, cron and generated types pushed
   successfully to the development deployment.
 - `forge build` — passed with Solidity 0.8.24 and the optimizer.
-- `forge test -vv` — **50 passed, 0 failed**; 3 invariants at 256 runs / 128,000
+- `forge test -vv` — **53 passed, 0 failed**; 3 invariants at 256 runs / 128,000
   calls / 0 reverts; fuzz runs at 256.
-- `forge test --fork-url https://sepolia.base.org -vv` — **50 passed, 0 failed**,
+- `forge test --fork-url https://sepolia.base.org -vv` — **53 passed, 0 failed**,
   including the fork deploy/deposit test.
-- Slither 0.11.6 — 13 informational findings, no high/medium findings.
+- Slither 0.11.6 — 13 results (10 Low, 3 Informational), no high/medium findings.
 - `bunx solc@0.8.24 --optimize --optimize-runs 200` — compiled successfully;
   initcode 19,801 bytes.
-- `bun test tests/policyRules.test.ts` — 8 passed, 0 failed, covering backend
-  rolling-reservation accounting and policy validation.
+- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts`
+  — 22 passed, 0 failed, covering rolling-reservation accounting, policy
+  validation, wallet errors, network switching, deployment-hash validation and
+  configuration blockers.
 - Deploy script dry-run on a Base Sepolia fork — succeeded, no broadcast.
 - Source inspection of the schema, backend guards, recovery cancellation rules,
   testnet config/read/verify actions, indexer and console.

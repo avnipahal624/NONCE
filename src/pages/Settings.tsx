@@ -42,9 +42,14 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!settings?.account) return;
-    setDisplayName(settings.account.displayName ?? settings.account.name ?? "");
-    setNotifyInApp(settings.account.notifyInApp ?? true);
+    const account = settings?.account;
+    if (!account) return;
+    // Hydrate editable fields from the server snapshot without a synchronous
+    // cascading render inside the effect.
+    queueMicrotask(() => {
+      setDisplayName(account.displayName ?? account.name ?? "");
+      setNotifyInApp(account.notifyInApp ?? true);
+    });
   }, [settings?.account]);
 
   const run = async (id: string, fn: () => Promise<unknown>) => {

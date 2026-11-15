@@ -1,6 +1,6 @@
 # NONCE deployment readiness — Base Sepolia
 
-**Date:** 5 November 2026  
+**Date:** 15 November 2026  
 **Network:** Base Sepolia, chain ID `84532`  
 **Status: SIMULATION-READY; NOT READY TO BROADCAST.**
 
@@ -12,13 +12,13 @@ displayed, or persisted by this work.
 | Item | Status |
 | --- | --- |
 | `forge build` | Passed |
-| `forge test -vvv` | 49 contract tests + 1 fork test passed (50 total) |
+| `forge test -vvv` | 52 contract tests + 1 fork test passed (53 total) |
 | Fork suite | Passed on Base Sepolia state |
 | Deploy script chain guard | Requires `block.chainid == 84532` |
 | Constructor validation | Non-zero owner/monitor, three distinct guardians, no role collisions, bounded policy/delays |
 | Compiler | Solidity `0.8.24`, optimizer enabled, 200 runs |
 | Contract size | Runtime 18,321 bytes; initcode 19,801 bytes |
-| Slither | 13 informational results; no high/medium findings |
+| Slither | 13 results (10 Low, 3 Informational); no high/medium findings |
 
 ### Constructor and initial roles
 
@@ -137,7 +137,7 @@ forge script script/Deploy.s.sol:DeployNONCEVault \
   --sender "$DEPLOYER_ADDRESS" \
   --broadcast --verify \
   --verifier etherscan \
-  --verifier-url "https://api-sepolia.basescan.org/api" \
+  --verifier-url "https://api.etherscan.io/v2/api?chainid=84532" \
   --etherscan-api-key "$BASESCAN_API_KEY" \
   -vvv
 ```
@@ -153,7 +153,7 @@ Automatic verification is requested by `--verify` above. If it must be retried:
 forge verify-contract "$NONCE_VAULT_ADDRESS" NONCEVault.sol:NONCEVault \
   --chain 84532 \
   --verifier etherscan \
-  --verifier-url "https://api-sepolia.basescan.org/api" \
+  --verifier-url "https://api.etherscan.io/v2/api?chainid=84532" \
   --etherscan-api-key "$BASESCAN_API_KEY" \
   --constructor-args "$(cast abi-encode \
     'constructor(address,address,address[3],uint256,uint256,uint256,uint64,uint64,uint64)' \

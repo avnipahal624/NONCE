@@ -325,6 +325,38 @@ export const triggerDecoySignal = mutation({
         incident.status !== "RESOLVED" && incident.status !== "FALSE_POSITIVE",
     );
     if (alreadyOpen) {
+      const attachedEvidenceHash = sha256Hex(
+        canonicalJson({
+          prior: alreadyOpen.evidenceHash,
+          additional: evidenceHash,
+          eventId,
+          observedAt: now,
+        }),
+      );
+      await ctx.db.insert("incidentEvidence", {
+        incidentId: alreadyOpen._id,
+        vaultId: vault._id,
+        label: `${classification.category} attached to the open incident`,
+        chainId: NONCE_NETWORK.chainId,
+        blockNumber,
+        blockHash,
+        logIndex: 0,
+        observedAt: now,
+        evidenceHash: attachedEvidenceHash,
+        verificationStatus: "OBSERVED",
+        source: "SIMULATED",
+      });
+      await ctx.db.patch(alreadyOpen._id, {
+        eventIds: [...alreadyOpen.eventIds, eventId],
+        evidenceHash: attachedEvidenceHash,
+        responseStatus: `${alreadyOpen.responseStatus} Additional ${classification.risk.toLowerCase()}-risk signal attached for review.`,
+      });
+      await audit(ctx, {
+        userId,
+        vaultId: vault._id,
+        action: "SIGNAL_ATTACHED_TO_INCIDENT",
+        detail: `Additional ${args.signalType} signal attached to ${alreadyOpen.reference}; evidence ${attachedEvidenceHash.slice(0, 16)}…`,
+      });
       return {
         status: "ALREADY_ESCALATED" as const,
         message:
@@ -436,7 +468,8 @@ export const verifyIncident = internalMutation({
     await ctx.db.patch(incident._id, {
       status: "VERIFIED",
       verifiedAt: now,
-      responseStatus: "Verified by two independent conditions. Submitting lockdown.",
+      responseStatus:
+        "Verified from the stored decoy signal and its policy mismatch. Submitting a simulated lockdown request.",
     });
     const signals = await ctx.db
       .query("threatSignals")

@@ -1,5 +1,10 @@
 # NONCE validation report
 
+> **Historical record (5 November 2026).** The current authoritative results are
+> in [`NONCE_TEST_RESULTS.md`](./NONCE_TEST_RESULTS.md) and
+> [`NONCE_CURRENT_AUDIT.md`](./NONCE_CURRENT_AUDIT.md): **53 contract tests**,
+> **22 Bun tests**, lint **0 errors / 19 warnings**, and still **no deployment**.
+
 **Date:** 5 November 2026
 **Scope:** `contracts/NONCEVault.sol`, Foundry tests, deploy script, testnet read/indexer layer, and the `/testnet` console.
 **Status:** local validation complete; **no Base Sepolia deployment exists**.
@@ -30,8 +35,8 @@ forge test -vvv
 Result:
 
 - Build: successful. Runtime size 18,321 bytes; initcode 19,801 bytes.
-- `NONCEVault.t.sol`: **49 passed, 0 failed**.
-- The full `forge test -vvv` command reported **50 passed, 0 failed**: the fork
+- `NONCEVault.t.sol`: **52 passed, 0 failed** after the 15 November additions.
+- The full `forge test -vvv` command reported **53 passed, 0 failed**: the fork
   test also ran because it falls back to the public RPC when the environment
   variable is absent.
 - Invariant suite: 3 invariants, **256 runs / 128,000 calls / 0 reverts**.
@@ -58,7 +63,7 @@ forge test --fork-url https://sepolia.base.org -vv
 Result:
 
 - Fork test: **1 passed**.
-- Complete suite on the Base Sepolia fork: **50 passed, 0 failed**.
+- Complete suite on the Base Sepolia fork: **53 passed, 0 failed**.
 - The fork test deploys `NONCEVault` locally against forked Base Sepolia state
   and verifies chain ID, roles, policy values, guardian count and a deposit. It
   does **not** broadcast a transaction.
@@ -91,8 +96,8 @@ or broadcast.
 slither . --filter-paths "lib|test|script"
 ```
 
-Slither analyzed 82 contracts with 102 detectors and reported **13 informational
-results**, with no high- or medium-severity finding:
+Slither analyzed 82 contracts with 102 detectors and reported **13 results
+(10 Low, 3 Informational)**, with no high- or medium-severity finding:
 
 - `timestamp` detector on delay/expiry comparisons. These comparisons are the
   security mechanism (timelocks and rolling windows); validator timestamp
@@ -133,15 +138,12 @@ backend.
 
 - `bun tsc -b --noEmit` — passed.
 - `bun run build` (`tsc -b && vite build`) — passed.
-- `bun test tests/policyRules.test.ts` — **8 passed, 0 failed**.
+- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts` — **22 passed, 0 failed**.
 - `bun convex dev --once` — functions, cron and generated types pushed
   successfully.
-- `bun run lint` — **failed overall**: 10 errors and 19 warnings. The failures
-  are pre-existing React-hooks/purity and unused-symbol issues in template and
-  earlier UI files (`PolicyDialog`, `carousel`, `sidebar`, `use-mobile`,
-  `Onboarding`, `Settings`). The latest redesigned files pass a targeted ESLint
-  run; see [`UI_REDESIGN.md`](./UI_REDESIGN.md) for the current counts. They were
-  not suppressed or weakened.
+- `bun run lint` — **passes**: 0 errors and 19 Fast Refresh/generated-directive
+  warnings. The former 10 errors were fixed without suppressing rules; see
+  [`UI_REDESIGN.md`](./UI_REDESIGN.md) and the current audit.
 
 ## 8. Deployment status
 

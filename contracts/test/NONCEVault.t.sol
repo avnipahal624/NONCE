@@ -922,6 +922,40 @@ contract NONCEVaultTest is Test {
         assertTrue(vault.frozen());
     }
 
+    /* --------------------- expiry / epoch edge cases -------------------- */
+
+    function testOldWithdrawalCannotBeApprovedAfterRecovery() public {
+        vm.prank(owner);
+        uint256 id = vault.requestWithdrawal(0.6 ether, recipient);
+
+        _recover(address(0xDEAD));
+
+        vm.prank(guardianOne);
+        vm.expectRevert(NONCEVault.AlreadyFinalised.selector);
+        vault.approveWithdrawal(id);
+    }
+
+    function testExpiredCleanupRejectsAnUnexpiredRequest() public {
+        vm.prank(owner);
+        uint256 id = vault.requestWithdrawal(1 wei, recipient);
+
+        vm.expectRevert(NONCEVault.DelayActive.selector);
+        vault.cancelExpired(id);
+
+        (, , , uint64 expiresAt, , , , , ) = vault.withdrawals(id);
+        vm.warp(uint256(expiresAt) + 1);
+        vault.cancelExpired(id);
+
+        (, , , , , , , bool cancelled, ) = vault.withdrawals(id);
+        assertTrue(cancelled);
+        assertEq(vault.reservedBalance(), 0);
+    }
+
+    function testZeroValueDepositReverts() public {
+        vm.expectRevert(NONCEVault.InvalidAmount.selector);
+        payable(address(vault)).transfer(0);
+    }
+
     /* -------------------------------- fuzz ------------------------------ */
 
     function testFuzzReservationNeverExceedsBalance(uint96 rawAmount) public {

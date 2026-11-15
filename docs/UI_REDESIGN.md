@@ -216,15 +216,15 @@ After:
 - `bun tsc -b --noEmit` — passed.
 - Focused ESLint on the changed files — passed with one existing Fast Refresh
   warning in `AppShell.tsx` (the file already exported `NoVaultYet` and a helper).
-- `bun run lint` — still fails on 10 pre-existing errors in template/legacy files
-  (`PolicyDialog`, carousel, sidebar, `use-mobile`, Onboarding, Settings) and 19
-  warnings. No new lint error was introduced by this pass.
+- `bun run lint` — **passes**: 0 errors and 19 Fast Refresh/generated-directive
+  warnings. The former 10 errors were fixed later without suppressing rules.
 - `bun run build` — passed; Vite produced the production bundle and the 217 KB
   compiled artifact asset.
 - `bun convex dev --once` — passed; functions and generated types are current.
-- `bun test tests/policyRules.test.ts` — 8 passed, 0 failed.
-- `forge test -vv test/NONCEVault.t.sol` — 49 passed, 0 failed. The contract was
-  not modified.
+- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts`
+  — 22 passed, 0 failed later in the hardening pass.
+- `forge test -vv test/NONCEVault.t.sol` — 52 passed, 0 failed; the fork test is
+  separate, for 53 total. Contract behavior was not modified.
 - No browser E2E, MetaMask signing, responsive device or accessibility audit was
   performed in this environment.
 - No screenshots were captured because this environment has no browser driver.
