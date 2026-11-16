@@ -11,6 +11,7 @@ reads live state, submits wallet-signed transactions, and indexes confirmed logs
 with a Convex worker only when deployment configuration exists; otherwise it
 shows blockers. No mainnet path exists. Do not send real assets.
 
+- Platform expansion audit and P1 status: [`docs/NONCE_PLATFORM_EXPANSION.md`](docs/NONCE_PLATFORM_EXPANSION.md)
 - Current audit and measured baseline: [`docs/NONCE_CURRENT_AUDIT.md`](docs/NONCE_CURRENT_AUDIT.md)
 - Final acceptance status and blockers: [`docs/NONCE_FINAL_AUDIT.md`](docs/NONCE_FINAL_AUDIT.md)
 - Current test results: [`docs/NONCE_TEST_RESULTS.md`](docs/NONCE_TEST_RESULTS.md)
@@ -29,13 +30,14 @@ shows blockers. No mainnet path exists. Do not send real assets.
 - UI redesign audit and P1 implementation record: [`docs/UI_REDESIGN.md`](docs/UI_REDESIGN.md)
 - P2 architecture (notifications, ERC-20, multi-vault, integrations): [`docs/P2_ARCHITECTURE.md`](docs/P2_ARCHITECTURE.md)
 - Reference Solidity vault and deployment steps: [`contracts/README.md`](contracts/README.md)
-- App routes: `/` marketing, `/auth`, `/onboarding`, `/dashboard`, `/vault`,
-  `/protection`, `/activity` (Response Center), `/activity/:incidentId`,
-  `/recovery`, `/testnet`, `/settings`
+- App routes: `/` marketing, `/auth`, `/onboarding`, `/dashboard`, `/copilot`,
+  `/finance`, `/passport`, `/vault`, `/protection`, `/activity` (Response
+  Center), `/activity/:incidentId`, `/recovery`, `/testnet`, `/settings`
 
 Commands: `bun convex dev --once` (codegen + function push), `bun tsc -b --noEmit`
 (typecheck), and `bun test tests/policyRules.test.ts tests/wallet.test.ts
-tests/testnetConfig.test.ts tests/testnetWallet.test.ts` (22 backend/unit tests).
+tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts`
+(37 backend/unit tests).
 The platform runs codegen and typecheck after each change; do not start dev
 servers. Contract checks: `cd contracts && forge build && forge test -vvv`. The
 suite has **52 passing unit/invariant tests plus 1 fork test (53 total)**, but

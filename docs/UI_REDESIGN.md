@@ -222,7 +222,7 @@ After:
   compiled artifact asset.
 - `bun convex dev --once` — passed; functions and generated types are current.
 - `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts`
-  — 22 passed, 0 failed later in the hardening pass.
+  — 37 passed, 0 failed after the later P1 platform expansion.
 - `forge test -vv test/NONCEVault.t.sol` — 52 passed, 0 failed; the fork test is
   separate, for 53 total. Contract behavior was not modified.
 - No browser E2E, MetaMask signing, responsive device or accessibility audit was

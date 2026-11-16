@@ -36,21 +36,35 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/lib/features";
 import { greeting, protectionTone, timeAgo, truncateMiddle } from "@/lib/nonce";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 const NAV = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
+  ...(FEATURES.copilot
+    ? [{ label: "Copilot", to: "/copilot", icon: Sparkles }]
+    : []),
+  ...(FEATURES.financeOverview
+    ? [{ label: "Finance", to: "/finance", icon: Wallet }]
+    : []),
   { label: "Vault", to: "/vault", icon: Vault },
   { label: "Protection", to: "/protection", icon: ShieldCheck },
+  ...(FEATURES.securityPassport
+    ? [{ label: "Passport", to: "/passport", icon: ShieldCheck }]
+    : []),
   { label: "Response Center", to: "/activity", icon: Activity },
   { label: "Guardians", to: "/recovery", icon: Users },
   { label: "Testnet", to: "/testnet", icon: FlaskConical },
   { label: "Settings", to: "/settings", icon: SettingsIcon },
 ];
 
-const MOBILE_NAV = NAV.filter((item) => item.to !== "/settings");
+const MOBILE_NAV = NAV.filter((item) =>
+  ["/dashboard", "/copilot", "/finance", "/vault", "/protection", "/activity"].includes(
+    item.to,
+  ),
+);
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();

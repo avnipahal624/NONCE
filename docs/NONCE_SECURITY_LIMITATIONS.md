@@ -133,7 +133,26 @@ assets.
 8. Record actual hashes, receipts and block numbers; never substitute dry-run
    addresses or simulated references.
 
-## 8. Before any real-value use
+## 8. P1 platform expansion limits
+
+- The “AI Security Copilot” is a deterministic local rules engine. It is not an
+  LLM, has no external context, and cannot sign or approve anything.
+- Fiat values, allowance analysis, DeFi exposure, NFT permissions and
+  cross-chain monitoring are **not connected**. The UI labels them unavailable
+  or planned rather than inventing data.
+- The address book is private application data. It does not modify the on-chain
+  allowlist and does not bypass an `allowlistOnly` policy.
+- The Transaction Firewall is advisory. A client could skip it; the backend
+  mutation and contract remain authoritative.
+- The Security Passport is a backend-derived summary. It is not a certification,
+  an audit, or proof of on-chain configuration without an independent live read.
+- Feature flags default experimental capabilities off; enabling a flag does not
+  add the missing backend, contract or data source.
+- QR payments, savings vaults, subscriptions, token approvals, developer
+  APIs/webhooks, passkeys, gas sponsorship, batched transactions, multi-vault UI
+  and real guardian signature collection remain unimplemented.
+
+## 9. Before any real-value use
 
 Do not use this contract with real value. Before that could be considered:
 

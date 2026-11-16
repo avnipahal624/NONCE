@@ -207,6 +207,18 @@ const schema = defineSchema(
       .index("by_vault", ["vaultId"])
       .index("by_vault_symbol", ["vaultId", "symbol"]),
 
+    addressBookEntries: defineTable({
+      userId: v.id("users"),
+      vaultId: v.id("vaults"),
+      label: v.string(),
+      address: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_vault", ["vaultId"])
+      .index("by_vault_address", ["vaultId", "address"]),
+
     withdrawalPolicies: defineTable({
       vaultId: v.id("vaults"),
       maxPerTransaction: v.string(),

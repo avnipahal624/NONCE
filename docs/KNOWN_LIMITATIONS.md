@@ -195,10 +195,11 @@ deployed/configured**; Playwright is checked in but not executed. See
 - Slither 0.11.6 — 13 results (10 Low, 3 Informational), no high/medium findings.
 - `bunx solc@0.8.24 --optimize --optimize-runs 200` — compiled successfully;
   initcode 19,801 bytes.
-- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts`
-  — 22 passed, 0 failed, covering rolling-reservation accounting, policy
-  validation, wallet errors, network switching, deployment-hash validation and
-  configuration blockers.
+- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts`
+  — 37 passed, 0 failed, covering rolling-reservation accounting, policy
+  validation, wallet errors, network switching, deployment-hash validation,
+  configuration blockers, Transaction Firewall, Copilot boundaries, Passport
+  states and feature flags.
 - Deploy script dry-run on a Base Sepolia fork — succeeded, no broadcast.
 - Source inspection of the schema, backend guards, recovery cancellation rules,
   testnet config/read/verify actions, indexer and console.

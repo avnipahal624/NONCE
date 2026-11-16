@@ -80,7 +80,7 @@ forge script script/Deploy.s.sol:DeployNONCEVault \
 | Slither | 82 contracts, 102 detectors, 13 results (10 Low, 3 Informational), no high/medium |
 | Deploy simulation | Successful; 5,537,656 gas; 0.000060914216 ETH at observed fork fees; no broadcast |
 | Frontend typecheck/build | Passed |
-| Backend/unit tests | 22 passed |
+| Backend/unit tests | 37 passed after the P1 platform expansion |
 | Repository lint | **Passes**: 0 errors, 19 Fast Refresh/generated-directive warnings |
 
 The expanded tests specifically cover cross-request withdrawal-approval replay,

@@ -138,7 +138,7 @@ backend.
 
 - `bun tsc -b --noEmit` — passed.
 - `bun run build` (`tsc -b && vite build`) — passed.
-- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts` — **22 passed, 0 failed**.
+- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts` — **37 passed, 0 failed** after the P1 expansion.
 - `bun convex dev --once` — functions, cron and generated types pushed
   successfully.
 - `bun run lint` — **passes**: 0 errors and 19 Fast Refresh/generated-directive

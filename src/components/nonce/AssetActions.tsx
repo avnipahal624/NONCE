@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowDownToLine, ArrowUpFromLine, Loader2, ShieldCheck, TriangleAlert } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -198,6 +198,21 @@ export function WithdrawDialog({
     resolver: zodResolver(withdrawSchema),
     defaultValues: { amount: "", destination: "" },
   });
+  const watchedAmount = useWatch({ control: form.control, name: "amount" });
+  const watchedDestination = useWatch({ control: form.control, name: "destination" });
+  const addressBook = useQuery(api.nonce.addresses.list, { vaultId });
+  const firewall = useQuery(
+    api.nonce.intelligence.analyzeWithdrawal,
+    asset && watchedAmount && /^0x[a-fA-F0-9]{40}$/.test((watchedDestination ?? "").trim())
+      ? {
+          vaultId,
+          assetId: asset._id,
+          amount: watchedAmount,
+          destination: (watchedDestination ?? "").trim(),
+        }
+      : "skip",
+  );
+  const firewallFailure = firewall?.ok ? !firewall.result.canSubmit : Boolean(firewall && !firewall.ok);
 
   const submit = form.handleSubmit(async (values) => {
     if (!asset) {
@@ -360,7 +375,79 @@ export function WithdrawDialog({
                   {form.formState.errors.destination.message}
                 </p>
               )}
+              {(addressBook ?? []).length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {(addressBook ?? []).slice(0, 5).map((entry) => (
+                    <button
+                      key={entry._id}
+                      type="button"
+                      onClick={() =>
+                        form.setValue("destination", entry.address, { shouldValidate: true })
+                      }
+                      className="rounded-full border border-hairline/70 bg-black/20 px-2 py-1 text-[9px] text-sage transition-colors hover:border-mint/30 hover:text-mint"
+                    >
+                      {entry.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {firewall?.ok && (
+              <div
+                className={cn(
+                  "rounded-lg border px-3.5 py-3",
+                  firewall.result.risk === "HIGH"
+                    ? "border-[#F17676]/30 bg-[#F17676]/[0.05]"
+                    : firewall.result.risk === "MEDIUM"
+                      ? "border-[#E9B45E]/25 bg-[#E9B45E]/[0.04]"
+                      : "border-mint/20 bg-mint/[0.04]",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-sage">
+                    <ShieldCheck className="size-3 text-mint" /> Transaction Firewall
+                  </span>
+                  <StatusPill
+                    label={`${firewall.result.risk} · ${firewall.result.score}`}
+                    tone={
+                      firewall.result.risk === "HIGH"
+                        ? "danger"
+                        : firewall.result.risk === "MEDIUM"
+                          ? "warn"
+                          : "safe"
+                    }
+                    className="text-[8px]"
+                  />
+                </div>
+                <p className="mt-1.5 text-[10px] leading-5 text-sage">{firewall.result.summary}</p>
+                <div className="mt-2 space-y-1">
+                  {firewall.result.checks.slice(0, 5).map((check) => (
+                    <p key={check.id} className="flex items-start gap-1.5 text-[9px] leading-4 text-sage">
+                      <span
+                        className={cn(
+                          "mt-1 size-1.5 shrink-0 rounded-full",
+                          check.status === "FAIL"
+                            ? "bg-[#F17676]"
+                            : check.status === "WARN"
+                              ? "bg-[#E9B45E]"
+                              : "bg-mint",
+                        )}
+                      />
+                      {check.label}: {check.detail}
+                    </p>
+                  ))}
+                </div>
+                <p className="mt-2 text-[9px] leading-4 text-sage/70">
+                  {firewall.result.requiresGuardians
+                    ? `This will require ${policy?.guardianThreshold ?? 2} guardian approvals and the saved delay.`
+                    : `This stays below the guardian threshold; the minimum ${firewall.result.delayMinutes}-minute delay still applies.`}
+                </p>
+              </div>
+            )}
+            {firewall && !firewall.ok && (
+              <p className="text-[10px] text-[#F17676]">{firewall.error}</p>
+            )}
 
             <div
               className={cn(
@@ -413,7 +500,7 @@ export function WithdrawDialog({
 
             <Button
               type="submit"
-              disabled={busy || blockedByState}
+              disabled={busy || blockedByState || firewallFailure}
               className="h-10 w-full rounded-lg bg-mint text-sm font-semibold text-[#04241a] hover:bg-mint-bright disabled:opacity-40"
             >
               {busy ? (

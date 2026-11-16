@@ -486,9 +486,9 @@ configured.
   including a local deploy/deposit on forked Base Sepolia state.
 - Slither 0.11.6 — 13 results (10 Low, 3 Informational), no high/medium findings.
 - Deploy script dry-run on a Base Sepolia fork — succeeded; **no broadcast**.
-- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts`
-  — 22 passed, 0 failed. Covers reservations and policy validation, wallet
-  errors/network switching and testnet configuration/hash validation.
+- `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts`
+  — 37 passed, 0 failed. Covers reservations, policy validation, wallet errors,
+  network switching, testnet configuration and the P1 intelligence surfaces.
 - Source inspection of schema, backend guards, recovery cancellation, policy
   execution, testnet config/read/verify/indexer and the console.
 

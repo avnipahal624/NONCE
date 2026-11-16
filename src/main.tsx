@@ -7,6 +7,7 @@ import { ConvexReactClient } from "convex/react";
 import React, { StrictMode, useEffect, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
+import { FEATURES } from "./lib/features";
 import "./index.css";
 
 // Lazy load route components for better code splitting. If the dev server is
@@ -49,6 +50,9 @@ const Faq = lazyRoute("faq", () => import("./pages/Faq.tsx"));
 const AuthPage = lazyRoute("auth", () => import("./pages/Auth.tsx"));
 const Onboarding = lazyRoute("onboarding", () => import("./pages/Onboarding.tsx"));
 const Dashboard = lazyRoute("dashboard", () => import("./pages/Dashboard.tsx"));
+const Copilot = lazyRoute("copilot", () => import("./pages/Copilot.tsx"));
+const Finance = lazyRoute("finance", () => import("./pages/Finance.tsx"));
+const Passport = lazyRoute("passport", () => import("./pages/Passport.tsx"));
 const Vault = lazyRoute("vault", () => import("./pages/Vault.tsx"));
 const Protection = lazyRoute("protection", () => import("./pages/Protection.tsx"));
 const Activity = lazyRoute("activity", () => import("./pages/Activity.tsx"));
@@ -186,6 +190,36 @@ createRoot(document.getElementById("root")!).render(
                   </Protected>
                 }
               />
+              {FEATURES.copilot && (
+                <Route
+                  path="/copilot"
+                  element={
+                    <Protected>
+                      <Copilot />
+                    </Protected>
+                  }
+                />
+              )}
+              {FEATURES.financeOverview && (
+                <Route
+                  path="/finance"
+                  element={
+                    <Protected>
+                      <Finance />
+                    </Protected>
+                  }
+                />
+              )}
+              {FEATURES.securityPassport && (
+                <Route
+                  path="/passport"
+                  element={
+                    <Protected>
+                      <Passport />
+                    </Protected>
+                  }
+                />
+              )}
               <Route
                 path="/vault"
                 element={

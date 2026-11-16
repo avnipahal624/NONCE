@@ -20,7 +20,7 @@ by SHA-256 rather than a Git commit.
 | Production build | `bun run build` | **Passed**, 4,020 modules transformed |
 | ESLint | `bun run lint` | **Passed**, exit 0: 0 errors, 19 Fast Refresh warnings |
 | Convex codegen/typecheck | `bun convex dev --once` | **Passed**, functions ready |
-| Backend/unit tests | `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts` | **22 passed, 0 failed** |
+| Backend/unit tests | `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts` | **37 passed, 0 failed** after the P1 expansion |
 | Contract build | `cd contracts && forge build` | **Passed** |
 | Contract tests | `cd contracts && forge test -vv` | **53 passed, 0 failed** (52 unit/invariant + 1 fork) |
 | Invariants | `forge test -vv` | 3 properties, 256 runs, 128,000 calls, 0 reverts |
@@ -28,7 +28,7 @@ by SHA-256 rather than a Git commit.
 | Slither | `slither . --filter-paths "lib|test|script"` | 13 results: **10 Low, 3 Informational, no High/Medium**; process exits 255 because findings exist |
 | RPC chain check | `cast chain-id --rpc-url https://sepolia.base.org` | **84532** |
 | Deployment config | `bunx convex env get ...` | **Not found** for all five testnet keys |
-| Browser E2E | `bunx playwright test --list` / `bunx playwright test` | 16 tests discovered; **all failed at browser launch** (missing Chromium, install `ENOSPC`), not at app assertions |
+| Browser E2E | `bunx playwright test --list` / `bunx playwright test` | 22 tests discovered; **all failed at browser launch** (missing Chromium, install `ENOSPC`), not at app assertions |
 
 The lint warnings are Fast Refresh export-shape warnings in the existing
 shadcn/AppShell/main files and unused generated-file directives. No rule was
@@ -153,7 +153,7 @@ deferred server-state hydration, and removal of unused symbols. Lint now exits
 2. **No funded deployer keystore and no broadcast approval.** The existing owner
    address has no outgoing nonce.
 3. **No browser E2E execution.** Playwright tests are checked in and enumerate,
-   but a run failed all 16 tests at browser launch because Chromium could not be
+   but a run failed all 22 tests at browser launch because Chromium could not be
    downloaded (workspace had ~196 MB free; install requires more space). No app
    assertion ran.
 4. **No real testnet transaction validation.** Wallet-signed deposits,
@@ -190,6 +190,16 @@ Code and tests:
 - `tests/wallet.test.ts` (new)
 - `tests/testnetConfig.test.ts` (new)
 - `tests/testnetWallet.test.ts` (new)
+- `tests/intelligence.test.ts` (new P1 tests)
+- `tests/e2e/intelligence.spec.ts` (new browser cases)
+- `src/lib/intelligence.ts`, `src/lib/features.ts` (new pure P1 helpers)
+- `src/convex/nonce/intelligence.ts`, `src/convex/nonce/addresses.ts` (new
+  owner-scoped P1 backend; `addressBookEntries` schema table)
+- `src/pages/Copilot.tsx`, `src/pages/Finance.tsx`, `src/pages/Passport.tsx` (new
+  protected routes)
+- `src/components/nonce/AssetActions.tsx` (pre-submit firewall and address-book
+  quick picks), `src/components/nonce/AppShell.tsx`, `src/main.tsx` (feature-gated
+  navigation/routes)
 
 Documentation:
 
@@ -199,6 +209,7 @@ Documentation:
 - `docs/NONCE_DEPLOYMENT_VERIFICATION.md` (new)
 - `docs/NONCE_SECURITY_LIMITATIONS.md` (new)
 - `docs/NONCE_DEMO_SCRIPT.md` (new)
+- `docs/NONCE_PLATFORM_EXPANSION.md` (new P1 audit/status)
 - Earlier P1/UI and legacy audit docs are being reconciled with the new counts.
 
 ## 8. Approval gates

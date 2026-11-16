@@ -36,7 +36,7 @@ type ChecklistItem = {
   detail: string;
 };
 
-function buildProtection(args: {
+export function buildProtection(args: {
   vault: Doc<"vaults"> | null;
   wallet: Doc<"walletIdentities"> | null;
   decoys: Doc<"decoys">[];

@@ -31,6 +31,23 @@ as completed evidence.
    guardians, policy, immutable delays and a matching RPC chain ID.
 5. **Stop.** Do not broadcast further transactions without explicit approval.
 
+## 0.1 P1 Copilot, Finance and Passport walkthrough (sandbox)
+
+1. Open **Copilot**. Confirm the “Local rules engine” label and the authority
+   boundary: no signing, autonomous freeze, recovery or policy approval.
+2. Review the findings and evidence references. Export the Markdown brief.
+3. Open **Finance**. Confirm fiat is **Not connected**, USDC is labelled
+   sandbox/not connected, and unsupported DeFi/allowance cards are marked
+   `PLANNED`.
+4. Add a labelled recipient in the address book.
+5. Select **Protected payment**, enter an amount and the saved recipient, and
+   show the Transaction Firewall result before submitting. A saved address is
+   still not automatically allowlist-approved.
+6. Submit a compliant payment and confirm it is queued, not immediately sent.
+7. Open **Passport**. Confirm it says “Sandbox passport — no on-chain
+   protection” and that the contract deployment is not confirmed.
+8. Do not describe any of these sandbox states as live protection.
+
 ## 1. Vault creation and configuration
 
 ### Sandbox

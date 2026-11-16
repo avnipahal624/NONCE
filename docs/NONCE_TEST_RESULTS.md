@@ -14,9 +14,9 @@ workspace at this time; it does not prove contract safety.
 | `bun run build` | Exit 0; Vite transformed 4,020 modules |
 | `bun run lint` | Exit 0; **0 errors, 19 warnings** |
 | `bun convex dev --once` | Exit 0; functions/codegen pushed |
-| `bunx playwright test --list` | 16 tests in 3 files |
-| `bunx playwright test` | **16 failed at browser launch**; missing Chromium, install blocked by ENOSPC |
-| `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts` | **22 passed, 0 failed**, 36 expectations |
+| `bunx playwright test --list` | 22 tests in 4 files |
+| `bunx playwright test` | **22 failed at browser launch**; missing Chromium, install blocked by ENOSPC |
+| `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts` | **37 passed, 0 failed**, 76 expectations |
 
 The 19 lint warnings are Fast Refresh export-shape warnings in existing
 shadcn/AppShell/main files and unused generated-file directives. They are not
@@ -69,6 +69,22 @@ in [`NONCE_CURRENT_AUDIT.md`](./NONCE_CURRENT_AUDIT.md).
 - already on Base Sepolia;
 - rejected `wallet_switchEthereumChain`;
 - a withdrawal write blocked before submission on the wrong chain.
+
+### P1 intelligence — 15 tests
+
+`tests/intelligence.test.ts` covers:
+
+- compliant payment preflight;
+- allowlist, per-transaction and rolling-limit failures;
+- guardian threshold detection;
+- unknown-recipient warnings without falsely blocking;
+- locked-vault and invalid-address blocking;
+- Copilot sandbox labelling and no-signing-authority disclaimer;
+- incident-driven risk and evidence references;
+- missing-guardian findings and recommendations;
+- Passport sandbox, verified and at-risk states;
+- privacy-safe address masking;
+- feature-flag defaults and explicit opt-out parsing.
 
 ## 3. Contract tests
 
@@ -126,7 +142,7 @@ Playwright is installed and configured. The suite was discovered successfully:
 
 ```bash
 bunx playwright test --list
-# 16 tests in 3 files
+# 22 tests in 4 files
 ```
 
 Coverage checked in:
@@ -138,10 +154,11 @@ Coverage checked in:
 - undeployed testnet honesty;
 - wallet rejection;
 - wrong-chain connection;
+- Copilot, Finance and Passport empty-state honesty;
 - mobile project (`Pixel 7`).
 
 **Run attempted; every test failed before page load.** `bunx playwright test`
-reported 16 failures at `browserType.launch`: no executable exists at
+reported 22 failures at `browserType.launch`: no executable exists at
 `~/.cache/ms-playwright/chromium_headless_shell-1255/.../chrome-headless-shell`.
 `bunx playwright install chromium` and
 `bunx playwright install chromium-headless-shell` both failed with `ENOSPC`
@@ -168,7 +185,7 @@ See [`NONCE_DEPLOYMENT_VERIFICATION.md`](./NONCE_DEPLOYMENT_VERIFICATION.md).
 - Basescan source verification — requires a real deployment and API key.
 - Real testnet deposits, withdrawals, approvals, freeze and recovery — require a
   deployed contract and wallet.
-- Playwright app assertions — the suite launched no browser; all 16 tests stopped
+- Playwright app assertions — the suite launched no browser; all 22 tests stopped
   at `browserType.launch` because Chromium is missing and cannot be installed.
 - Accessibility audit, device matrix, load/soak testing and independent audit.
 
@@ -179,7 +196,7 @@ bun tsc -b --noEmit
 bun run lint
 bun run build
 bun convex dev --once
-bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts
+bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts
 
 export PATH="$PATH:$HOME/.foundry/bin"
 cd contracts
