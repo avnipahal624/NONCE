@@ -64,7 +64,9 @@ export function RequireAuth({
                 <Lock className="size-5 text-muted-foreground" />
               </div>
             </div>
-            <CardTitle className="text-xl">{title}</CardTitle>
+            <CardTitle>
+              <h1 className="text-xl">{title}</h1>
+            </CardTitle>
             <CardDescription>{description}</CardDescription>
           </CardHeader>
           <CardContent className="text-center text-sm text-muted-foreground">

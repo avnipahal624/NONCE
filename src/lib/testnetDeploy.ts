@@ -12,7 +12,6 @@ import {
   type Hex,
 } from "viem";
 import { baseSepolia } from "viem/chains";
-import artifactUrl from "../../contracts/out/NONCEVault.sol/NONCEVault.json?url";
 import { getInjectedWallet, humanizeWalletError } from "./wallet";
 import { TESTNET_CHAIN_ID } from "./testnet";
 
@@ -177,6 +176,27 @@ const MIN_RECOVERY_DAYS = 2;
 const MAX_RECOVERY_DAYS = 90;
 const MIN_POLICY_DAYS = 1;
 const MAX_POLICY_DAYS = 30;
+
+/**
+ * The Foundry artifact lives in a gitignored build directory, so it legitimately
+ * does not exist until `forge build` has run. A static `?url` import would fail
+ * module resolution and take down every route that reaches this module. A glob
+ * resolves to an empty map instead, letting the deployment panel show an
+ * explicit "not compiled" state rather than crashing the page.
+ */
+const artifactUrls = import.meta.glob<string>(
+  "../../contracts/out/NONCEVault.sol/NONCEVault.json",
+  { query: "?url", import: "default", eager: true },
+);
+
+export const NONCE_VAULT_ARTIFACT_PATH = "contracts/out/NONCEVault.sol/NONCEVault.json";
+
+function resolveArtifactUrl(): string | null {
+  for (const [path, url] of Object.entries(artifactUrls)) {
+    if (path.endsWith("NONCEVault.sol/NONCEVault.json")) return url;
+  }
+  return null;
+}
 
 let artifactPromise: Promise<DeployArtifact> | null = null;
 
@@ -405,6 +425,12 @@ export async function loadNonceVaultArtifact(): Promise<DeployArtifact> {
   if (artifactPromise) return artifactPromise;
 
   artifactPromise = (async () => {
+    const artifactUrl = resolveArtifactUrl();
+    if (!artifactUrl) {
+      throw new Error(
+        `The compiled NONCEVault artifact is missing (${NONCE_VAULT_ARTIFACT_PATH}). Run \`forge build\` in contracts/ and reload this page. Nothing can be deployed until the artifact exists.`,
+      );
+    }
     let response: Response;
     try {
       response = await fetch(artifactUrl);

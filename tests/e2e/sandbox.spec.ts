@@ -26,7 +26,10 @@ test.describe("sandbox experience", () => {
     await expect(
       page.getByText(/live console is waiting for a deployment/i),
     ).toBeVisible();
-    await expect(page.getByText(/no nonce_vault_address/i)).toBeVisible();
+    // The missing variable is reported twice: once in a responsive-only summary
+    // row and once in the deployment checklist. Assert on the copy the reader
+    // actually sees rather than whichever node comes first in the DOM.
+    await expect(page.getByText(/no nonce_vault_address/i).filter({ visible: true })).toBeVisible();
     await expect(page.locator("body")).not.toContainText(/0x[a-fA-F0-9]{40}/);
   });
 });
