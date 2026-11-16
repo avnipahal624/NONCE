@@ -4,9 +4,12 @@ This document lists what this build does **not** do, what is simulated, and
 which checks were not run. It is intentionally blunt. Do not describe NONCE as
 audited, production-ready or fully tested.
 
-**Current snapshot (15 November 2026):** 53 contract tests and 22 Bun tests
+**Current snapshot (16 November 2026):** 53 contract tests and 37 Bun tests
 pass; lint passes with 0 errors and 19 warnings; **no Base Sepolia contract is
-deployed/configured**; Playwright is checked in but not executed. See
+deployed/configured**; the P1 surface (Copilot, Finance Overview, Security
+Passport, Transaction Firewall, address book) is compile-verified only — the 22
+Playwright tests are checked in but no browser could be installed, so no browser
+assertion has run. See
 [`NONCE_CURRENT_AUDIT.md`](./NONCE_CURRENT_AUDIT.md) and
 [`NONCE_SECURITY_LIMITATIONS.md`](./NONCE_SECURITY_LIMITATIONS.md).
 
