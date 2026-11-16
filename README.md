@@ -31,8 +31,9 @@ shows blockers. No mainnet path exists. Do not send real assets.
 - P2 architecture (notifications, ERC-20, multi-vault, integrations): [`docs/P2_ARCHITECTURE.md`](docs/P2_ARCHITECTURE.md)
 - Reference Solidity vault and deployment steps: [`contracts/README.md`](contracts/README.md)
 - App routes: `/` marketing, `/auth`, `/onboarding`, `/dashboard`, `/copilot`,
-  `/finance`, `/passport`, `/vault`, `/protection`, `/activity` (Response
-  Center), `/activity/:incidentId`, `/recovery`, `/testnet`, `/settings`
+  `/finance`, `/firewall`, `/passport`, `/vault`, `/protection`, `/activity`
+  (Response Center), `/activity/:incidentId`, `/recovery`, `/testnet`,
+  `/settings`
 
 Commands: `bun convex dev --once` (codegen + function push), `bun tsc -b --noEmit`
 (typecheck), and `bun test tests/policyRules.test.ts tests/wallet.test.ts

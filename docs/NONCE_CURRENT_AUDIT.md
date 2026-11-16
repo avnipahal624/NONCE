@@ -195,8 +195,9 @@ Code and tests:
 - `src/lib/intelligence.ts`, `src/lib/features.ts` (new pure P1 helpers)
 - `src/convex/nonce/intelligence.ts`, `src/convex/nonce/addresses.ts` (new
   owner-scoped P1 backend; `addressBookEntries` schema table)
-- `src/pages/Copilot.tsx`, `src/pages/Finance.tsx`, `src/pages/Passport.tsx` (new
-  protected routes)
+- `src/pages/Copilot.tsx`, `src/pages/Finance.tsx`, `src/pages/Firewall.tsx`,
+  `src/pages/Passport.tsx` (new protected routes)
+- `src/components/nonce/FirewallPanel.tsx` (shared preflight result panel)
 - `src/components/nonce/AssetActions.tsx` (pre-submit firewall and address-book
   quick picks), `src/components/nonce/AppShell.tsx`, `src/main.tsx` (feature-gated
   navigation/routes)

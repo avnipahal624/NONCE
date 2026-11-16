@@ -49,6 +49,9 @@ const NAV = [
   ...(FEATURES.financeOverview
     ? [{ label: "Finance", to: "/finance", icon: Wallet }]
     : []),
+  ...(FEATURES.transactionFirewall
+    ? [{ label: "Firewall", to: "/firewall", icon: ShieldCheck }]
+    : []),
   { label: "Vault", to: "/vault", icon: Vault },
   { label: "Protection", to: "/protection", icon: ShieldCheck },
   ...(FEATURES.securityPassport
@@ -61,9 +64,15 @@ const NAV = [
 ];
 
 const MOBILE_NAV = NAV.filter((item) =>
-  ["/dashboard", "/copilot", "/finance", "/vault", "/protection", "/activity"].includes(
-    item.to,
-  ),
+  [
+    "/dashboard",
+    "/copilot",
+    "/finance",
+    "/firewall",
+    "/vault",
+    "/protection",
+    "/activity",
+  ].includes(item.to),
 );
 
 export function AppShell({ children }: { children: ReactNode }) {

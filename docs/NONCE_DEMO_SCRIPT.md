@@ -39,14 +39,16 @@ as completed evidence.
 3. Open **Finance**. Confirm fiat is **Not connected**, USDC is labelled
    sandbox/not connected, and unsupported DeFi/allowance cards are marked
    `PLANNED`.
-4. Add a labelled recipient in the address book.
-5. Select **Protected payment**, enter an amount and the saved recipient, and
+4. Open **Firewall**, enter a valid destination and amount, and show the
+   pass/warn/fail checks. Confirm this screen does not submit or reserve funds.
+5. Add a labelled recipient in the address book.
+6. Select **Protected payment**, enter an amount and the saved recipient, and
    show the Transaction Firewall result before submitting. A saved address is
    still not automatically allowlist-approved.
-6. Submit a compliant payment and confirm it is queued, not immediately sent.
-7. Open **Passport**. Confirm it says “Sandbox passport — no on-chain
+7. Submit a compliant payment and confirm it is queued, not immediately sent.
+8. Open **Passport**. Confirm it says “Sandbox passport — no on-chain
    protection” and that the contract deployment is not confirmed.
-8. Do not describe any of these sandbox states as live protection.
+9. Do not describe any of these sandbox states as live protection.
 
 ## 1. Vault creation and configuration
 

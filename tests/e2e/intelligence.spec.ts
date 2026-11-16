@@ -11,6 +11,7 @@ test.describe("intelligence surfaces without a vault", () => {
     await signInWithSandbox(page);
     await expect(page.getByRole("link", { name: /copilot/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /finance/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /firewall/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /passport/i }).first()).toBeVisible();
   });
 
@@ -23,9 +24,13 @@ test.describe("intelligence surfaces without a vault", () => {
     await expect(page.locator("body")).not.toContainText(/live protection/i);
   });
 
-  test("finance and passport stay explicit without a vault", async ({ page }) => {
+  test("finance, firewall and passport stay explicit without a vault", async ({ page }) => {
     await signInWithSandbox(page);
     await page.goto("/finance");
+    await expect(
+      page.getByRole("heading", { name: /no vault is configured on this account/i }),
+    ).toBeVisible();
+    await page.goto("/firewall");
     await expect(
       page.getByRole("heading", { name: /no vault is configured on this account/i }),
     ).toBeVisible();

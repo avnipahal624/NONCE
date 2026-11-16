@@ -51,7 +51,7 @@ security invariants were preserved.
 | Batched transactions | **Planned** | Requires smart-account execution path |
 | Authenticated developer APIs/webhooks | **Not implemented** | No credential, rate-limit or signed-delivery service |
 | AI Copilot interface | **Implemented** | `/copilot` |
-| Transaction Firewall | **Implemented in payment flow** | Preflight panel before withdrawal submission |
+| Transaction Firewall | **Implemented** | `/firewall` + preflight panel before withdrawal submission |
 | Finance Overview | **Implemented** | `/finance` |
 | Protected Payments | **Implemented as policy-held withdrawals** | No immediate send |
 | DeFi Security Center | **Planned, explicitly unavailable** | Finance planned-capability panel |
@@ -95,6 +95,8 @@ security invariants were preserved.
   summaries, recovery guidance, scope disclosure and Markdown export.
 - `/finance` — portfolio, fiat-unavailable state, protected payment entry point,
   address book CRUD, activity search/export and planned-capability disclosures.
+- `/firewall` — dedicated pre-signing policy simulator using the same
+  `analyzeWithdrawal` query as the withdrawal dialog. It never submits.
 - `/passport` — metallic Security Passport with backend-derived status, coverage,
   milestones, masked holder and privacy-safe copy text.
 - Withdrawal dialog now shows a Transaction Firewall result before submission

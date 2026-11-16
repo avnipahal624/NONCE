@@ -52,6 +52,7 @@ const Onboarding = lazyRoute("onboarding", () => import("./pages/Onboarding.tsx"
 const Dashboard = lazyRoute("dashboard", () => import("./pages/Dashboard.tsx"));
 const Copilot = lazyRoute("copilot", () => import("./pages/Copilot.tsx"));
 const Finance = lazyRoute("finance", () => import("./pages/Finance.tsx"));
+const Firewall = lazyRoute("firewall", () => import("./pages/Firewall.tsx"));
 const Passport = lazyRoute("passport", () => import("./pages/Passport.tsx"));
 const Vault = lazyRoute("vault", () => import("./pages/Vault.tsx"));
 const Protection = lazyRoute("protection", () => import("./pages/Protection.tsx"));
@@ -206,6 +207,16 @@ createRoot(document.getElementById("root")!).render(
                   element={
                     <Protected>
                       <Finance />
+                    </Protected>
+                  }
+                />
+              )}
+              {FEATURES.transactionFirewall && (
+                <Route
+                  path="/firewall"
+                  element={
+                    <Protected>
+                      <Firewall />
                     </Protected>
                   }
                 />

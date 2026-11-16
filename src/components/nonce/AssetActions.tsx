@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { StatusPill } from "./StatusPill";
+import { FirewallPanel } from "./FirewallPanel";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { cn } from "@/lib/utils";
 import { formatAmount, formatTime, vaultStateCopy } from "@/lib/nonce";
@@ -393,60 +394,12 @@ export function WithdrawDialog({
               )}
             </div>
 
-            {firewall?.ok && (
-              <div
-                className={cn(
-                  "rounded-lg border px-3.5 py-3",
-                  firewall.result.risk === "HIGH"
-                    ? "border-[#F17676]/30 bg-[#F17676]/[0.05]"
-                    : firewall.result.risk === "MEDIUM"
-                      ? "border-[#E9B45E]/25 bg-[#E9B45E]/[0.04]"
-                      : "border-mint/20 bg-mint/[0.04]",
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-sage">
-                    <ShieldCheck className="size-3 text-mint" /> Transaction Firewall
-                  </span>
-                  <StatusPill
-                    label={`${firewall.result.risk} · ${firewall.result.score}`}
-                    tone={
-                      firewall.result.risk === "HIGH"
-                        ? "danger"
-                        : firewall.result.risk === "MEDIUM"
-                          ? "warn"
-                          : "safe"
-                    }
-                    className="text-[8px]"
-                  />
-                </div>
-                <p className="mt-1.5 text-[10px] leading-5 text-sage">{firewall.result.summary}</p>
-                <div className="mt-2 space-y-1">
-                  {firewall.result.checks.slice(0, 5).map((check) => (
-                    <p key={check.id} className="flex items-start gap-1.5 text-[9px] leading-4 text-sage">
-                      <span
-                        className={cn(
-                          "mt-1 size-1.5 shrink-0 rounded-full",
-                          check.status === "FAIL"
-                            ? "bg-[#F17676]"
-                            : check.status === "WARN"
-                              ? "bg-[#E9B45E]"
-                              : "bg-mint",
-                        )}
-                      />
-                      {check.label}: {check.detail}
-                    </p>
-                  ))}
-                </div>
-                <p className="mt-2 text-[9px] leading-4 text-sage/70">
-                  {firewall.result.requiresGuardians
-                    ? `This will require ${policy?.guardianThreshold ?? 2} guardian approvals and the saved delay.`
-                    : `This stays below the guardian threshold; the minimum ${firewall.result.delayMinutes}-minute delay still applies.`}
-                </p>
-              </div>
-            )}
-            {firewall && !firewall.ok && (
-              <p className="text-[10px] text-[#F17676]">{firewall.error}</p>
+            {firewall && (
+              <FirewallPanel
+                result={firewall.ok ? firewall.result : null}
+                error={firewall.ok ? null : firewall.error}
+                guardianThreshold={policy?.guardianThreshold ?? 2}
+              />
             )}
 
             <div

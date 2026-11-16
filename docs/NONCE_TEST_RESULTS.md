@@ -154,7 +154,7 @@ Coverage checked in:
 - undeployed testnet honesty;
 - wallet rejection;
 - wrong-chain connection;
-- Copilot, Finance and Passport empty-state honesty;
+- Copilot, Finance, Firewall and Passport empty-state honesty;
 - mobile project (`Pixel 7`).
 
 **Run attempted; every test failed before page load.** `bunx playwright test`
