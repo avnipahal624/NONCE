@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { AppShell, NoVaultYet } from "@/components/nonce/AppShell";
+import { PassportFlipCard } from "@/components/nonce/PassportFlipCard";
 import { PageHeader, SectionLabel } from "@/components/nonce/PageHeader";
 import { StatusPill } from "@/components/nonce/StatusPill";
 import { Button } from "@/components/ui/button";
@@ -89,7 +90,52 @@ export default function Passport() {
         />
 
         <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="group relative">
+          <PassportFlipCard
+            back={
+              <section className="relative min-h-full overflow-hidden rounded-[1.75rem] border border-mint/25 bg-[linear-gradient(145deg,#102d24_0%,#0d3531_55%,#081b18_100%)] p-6 sm:p-8">
+                <div className="pointer-events-none absolute -right-12 -top-16 size-56 rounded-full border border-mint/15" />
+                <div className="pointer-events-none absolute -right-4 -top-8 size-40 rounded-full border border-sky-200/10" />
+                <div className="relative flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[9px] font-medium uppercase tracking-[0.28em] text-mint/75">NONCE · evidence manifest</p>
+                    <h2 className="mt-4 text-2xl font-semibold tracking-tight text-ivory">Proof behind the passport</h2>
+                    <p className="mt-2 text-[10px] text-sage">{passport.network} · {passport.contractVersion}</p>
+                  </div>
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-mint/25 bg-mint/[0.07] text-mint [transform:rotateY(180deg)]">
+                    <Fingerprint className="size-6" />
+                  </div>
+                </div>
+                <div className="relative mt-6 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-white/[0.08] bg-black/15 p-3">
+                    <p className="text-[8px] uppercase tracking-[0.16em] text-sage/70">Evidence status</p>
+                    <StatusPill label={passport.status} tone={STATUS_TONE[passport.status]} className="mt-2 text-[8px]" />
+                  </div>
+                  <div className="rounded-xl border border-white/[0.08] bg-black/15 p-3">
+                    <p className="text-[8px] uppercase tracking-[0.16em] text-sage/70">Verified coverage</p>
+                    <p className="mt-1 font-tabular text-xl font-semibold text-ivory">{passport.score}%</p>
+                  </div>
+                </div>
+                <div className="relative mt-5">
+                  <p className="text-[8px] uppercase tracking-[0.18em] text-sage/70">Latest protection checks</p>
+                  <div className="mt-2 divide-y divide-white/[0.07]">
+                    {passport.checks.slice(0, 4).map((check) => (
+                      <div key={check.id} className="flex items-center justify-between gap-3 py-2">
+                        <span className="min-w-0 text-[10px] text-ivory/85">{check.label}</span>
+                        <StatusPill label={check.status} tone={check.status === "PASS" ? "safe" : check.status === "WARN" ? "warn" : "danger"} className="shrink-0 text-[8px]" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="relative mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.08] pt-4">
+                  <p className="text-[9px] text-sage">{passport.milestones.filter((milestone) => milestone.complete).length} of {passport.milestones.length} milestones recorded</p>
+                  <p className="font-mono text-[8px] text-sage/60">{contract.maskedAddress ?? "Contract not configured"}</p>
+                </div>
+                <p className="relative mt-4 text-[9px] leading-4 text-sage/65">
+                  The manifest reflects saved evidence. It is not a signed certificate, audit or guarantee.
+                </p>
+              </section>
+            }
+          >
             <div className="absolute -inset-4 rounded-[2rem] bg-[radial-gradient(circle_at_30%_20%,rgba(131,196,179,0.16),transparent_55%)] blur-2xl transition-opacity duration-500 group-hover:opacity-100 motion-reduce:transition-none" />
             <section className="relative overflow-hidden rounded-[1.75rem] border border-mint/20 bg-[linear-gradient(125deg,#0a2118_0%,#103b35_48%,#071713_100%)] p-1 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] transition-transform duration-500 group-hover:-translate-y-1 group-hover:rotate-[-0.4deg] motion-reduce:transform-none">
               <div className="nonce-shell-grid relative overflow-hidden rounded-[1.45rem] border border-white/[0.07] p-6 sm:p-8">
@@ -147,7 +193,7 @@ export default function Passport() {
                 </div>
               </div>
             </section>
-          </div>
+          </PassportFlipCard>
 
           <section className="rounded-2xl border border-hairline/70 bg-[#0b1f17]/75 p-5">
             <div className="flex items-center justify-between">
