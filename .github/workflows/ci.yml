@@ -55,6 +55,6 @@ jobs:
       - name: Build contracts
         working-directory: contracts
         run: forge build
-      - name: Run unit, invariant, fuzz and Base Sepolia fork tests
+      - name: Run unit, fuzz and invariant tests
         working-directory: contracts
         run: forge test -vvv
