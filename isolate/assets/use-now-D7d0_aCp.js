@@ -1,1 +1,0 @@
-import{r as e}from"./react-vendor-BvTZ-nDW.js";function w(t=1e3){const[o,r]=e.useState(()=>Date.now());return e.useEffect(()=>{const n=window.setInterval(()=>r(Date.now()),t);return()=>window.clearInterval(n)},[t]),o}export{w as u};
