@@ -29,6 +29,9 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Generate Convex types with an isolated local backend
         run: bunx convex dev --once
+        env:
+          CONVEX_SITE_URL: http://localhost:5173
+          VLY_CONVEX_AUTH_ISSUER: https://nonce-ci.invalid
       - name: TypeScript
         run: bun tsc -b --noEmit
       - name: Lint
