@@ -26,12 +26,14 @@ export function PassportFlipCard({ children, back }: PassportFlipCardProps) {
         >
           <div
             aria-hidden={flipped}
+            inert={flipped}
             className="col-start-1 row-start-1 [backface-visibility:hidden]"
           >
             {children}
           </div>
           <div
             aria-hidden={!flipped}
+            inert={!flipped}
             className="col-start-1 row-start-1 [backface-visibility:hidden] [transform:rotateY(180deg)]"
           >
             {back}
