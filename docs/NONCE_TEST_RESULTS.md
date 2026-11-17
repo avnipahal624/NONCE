@@ -14,8 +14,8 @@ workspace at this time; it does not prove contract safety.
 | `bun run build` | Exit 0; Vite transformed 4,020 modules |
 | `bun run lint` | Exit 0; **0 errors, 19 warnings** |
 | `bun convex dev --once` | Exit 0; functions/codegen pushed |
-| `bunx playwright test --list` | 22 tests in 4 files |
-| `bunx playwright test` | **22 failed at browser launch**; missing Chromium, install blocked by ENOSPC |
+| `bunx playwright test --list` | 24 tests in 4 files |
+| `bunx playwright test` | **24 failed at browser launch**; missing Chromium, install blocked by ENOSPC |
 | `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts` | **37 passed, 0 failed**, 76 expectations |
 
 The 19 lint warnings are Fast Refresh export-shape warnings in existing
@@ -142,7 +142,7 @@ Playwright is installed and configured. The suite was discovered successfully:
 
 ```bash
 bunx playwright test --list
-# 22 tests in 4 files
+# 24 tests in 4 files
 ```
 
 Coverage checked in:
@@ -154,7 +154,7 @@ Coverage checked in:
 - undeployed testnet honesty;
 - wallet rejection;
 - wrong-chain connection;
-- Copilot, Finance, Firewall and Passport empty-state honesty;
+- Copilot, Finance, Firewall, Notifications and Passport empty-state honesty;
 - mobile project (`Pixel 7`).
 
 **Run attempted; every test failed before page load.** `bunx playwright test`
@@ -185,7 +185,7 @@ See [`NONCE_DEPLOYMENT_VERIFICATION.md`](./NONCE_DEPLOYMENT_VERIFICATION.md).
 - Basescan source verification — requires a real deployment and API key.
 - Real testnet deposits, withdrawals, approvals, freeze and recovery — require a
   deployed contract and wallet.
-- Playwright app assertions — the suite launched no browser; all 22 tests stopped
+- Playwright app assertions — the suite launched no browser; all 24 tests stopped
   at `browserType.launch` because Chromium is missing and cannot be installed.
 - Accessibility audit, device matrix, load/soak testing and independent audit.
 

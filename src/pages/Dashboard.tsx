@@ -363,6 +363,15 @@ export default function Dashboard() {
               />
               <StatusPill label="Base Sepolia · 84532" tone="neutral" />
               <StatusPill label={protection.label} tone={protectionTone(protection.level)} />
+              <Button
+                asChild
+                variant="outline"
+                className="h-8 gap-1.5 rounded-lg border-hairline bg-black/20 px-3 text-[10px]"
+              >
+                <Link to="/passport">
+                  <ShieldCheck className="size-3" /> Passport
+                </Link>
+              </Button>
             </>
           }
         />

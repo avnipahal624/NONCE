@@ -5,7 +5,9 @@ test.describe("public experience", () => {
     await page.goto("/");
     await expect(page.locator("body")).not.toContainText("Preview runtime error");
     await expect(page.getByRole("heading").first()).toBeVisible();
-    await expect(page.getByRole("link", { name: /enter|sign in|get started/i }).first()).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /protect my wallet|enter|sign in|get started/i }).first(),
+    ).toBeVisible();
   });
 
   test("auth page offers email and explicit sandbox access", async ({ page }) => {

@@ -62,6 +62,7 @@ security invariants were preserved.
 | Advanced Security Analytics | **Partial** | Copilot + activity + passport; no external analytics |
 | 3D/motion | **CSS-only premium passport motion** | No Three.js dependency added; reduced-motion class included |
 | Feature flags | **Implemented** | `src/lib/features.ts`, backend `intelligence.featureFlags`; P2/P3 defaults off |
+| Notification Center | **Implemented for in-app delivery** | `/notifications`; email/SMS/push remain unavailable |
 | Authorization/data isolation | **Implemented for new backend** | Every new mutation/query resolves session and vault ownership |
 | External API error handling | **Not applicable / no external AI or finance API added** | No paid service introduced |
 | Background retries | **Existing indexer only** | No new background jobs |
@@ -97,6 +98,8 @@ security invariants were preserved.
   address book CRUD, activity search/export and planned-capability disclosures.
 - `/firewall` — dedicated pre-signing policy simulator using the same
   `analyzeWithdrawal` query as the withdrawal dialog. It never submits.
+- `/notifications` — in-app notification center with unread/critical filters, search,
+  mark-read controls and explicit external-delivery limits.
 - `/passport` — metallic Security Passport with backend-derived status, coverage,
   milestones, masked holder and privacy-safe copy text.
 - Withdrawal dialog now shows a Transaction Firewall result before submission

@@ -54,6 +54,7 @@ const Copilot = lazyRoute("copilot", () => import("./pages/Copilot.tsx"));
 const Finance = lazyRoute("finance", () => import("./pages/Finance.tsx"));
 const Firewall = lazyRoute("firewall", () => import("./pages/Firewall.tsx"));
 const Passport = lazyRoute("passport", () => import("./pages/Passport.tsx"));
+const Notifications = lazyRoute("notifications", () => import("./pages/Notifications.tsx"));
 const Vault = lazyRoute("vault", () => import("./pages/Vault.tsx"));
 const Protection = lazyRoute("protection", () => import("./pages/Protection.tsx"));
 const Activity = lazyRoute("activity", () => import("./pages/Activity.tsx"));
@@ -268,6 +269,14 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <Protected>
                     <Recovery />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <Protected>
+                    <Notifications />
                   </Protected>
                 }
               />

@@ -23,7 +23,7 @@ spent, and no browser test was executed in this pass.
 | Contract tests pass | **PASS** | 53/53 (52 unit/invariant + 1 fork), 0 failed |
 | Fuzz/invariant expansion | **PASS** | 2 fuzz tests at 256 runs; 3 invariants, 256 runs, 128k calls |
 | Static analysis reviewed | **PASS with findings** | Slither: 10 Low, 3 Informational, 0 High/Medium |
-| Browser E2E passes | **BLOCKED** | 22 tests discovered; run failed at browser launch (missing Chromium, install `ENOSPC`), so no app assertion ran |
+| Browser E2E passes | **BLOCKED** | 24 tests discovered; run failed at browser launch (missing Chromium, install `ENOSPC`), so no app assertion ran |
 | Deployment evidence verified | **BLOCKED** | no address, receipt, bytecode, source or role read |
 | Real testnet transactions validated | **BLOCKED** | no deployed contract or funded keystore |
 | Decoy-to-freeze demonstrated with authentic evidence | **BLOCKED** | sandbox pipeline exists; no on-chain freeze receipt |
@@ -44,7 +44,7 @@ spent, and no browser test was executed in this pass.
 - Testnet reads now include immutable policy/recovery delays, guardian count and
   threshold, allowlist count, and both freeze sources.
 - Corrected misleading testnet labels for epoch and withdrawal delay.
-- Playwright configuration and 22 tests checked in.
+- Playwright configuration and 24 tests checked in.
 - Six audit/validation documents with exact measured results.
 
 ## 3. What is not complete
@@ -68,8 +68,8 @@ The UI correctly refuses to pretend otherwise.
 
 ### Browser E2E
 
-`bunx playwright test --list` finds 22 tests, but no browser executable could be
-installed. A run attempt failed all 22 tests at `browserType.launch` because the
+`bunx playwright test --list` finds 24 tests, but no browser executable could be
+installed. A run attempt failed all 24 tests at `browserType.launch` because the
 Chromium headless shell is absent. The workspace had roughly 196 MB free;
 Chromium and the headless shell downloads both failed with `ENOSPC`. No
 browser/MetaMask interaction was viewed or tested.

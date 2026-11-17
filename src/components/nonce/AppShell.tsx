@@ -395,9 +395,12 @@ function NotificationsPopover() {
             </ul>
           )}
         </div>
-        <div className="border-t border-hairline/70 px-4 py-2.5">
-          <Link to="/activity" className="text-[10px] text-mint hover:text-mint-bright">
-            Open incident center →
+        <div className="flex items-center justify-between border-t border-hairline/70 px-4 py-2.5">
+          <Link to="/notifications" className="text-[10px] text-mint hover:text-mint-bright">
+            View all →
+          </Link>
+          <Link to="/activity" className="text-[10px] text-sage hover:text-mint">
+            Incident center
           </Link>
         </div>
       </PopoverContent>
@@ -526,6 +529,12 @@ export function NoVaultYet() {
             >
               <Link to="/onboarding">Create a sandbox vault</Link>
             </Button>
+            <Link
+              to="/passport"
+              className="text-[11px] text-sage underline-offset-4 hover:text-ivory hover:underline"
+            >
+              View Security Passport
+            </Link>
             <Link
               to="/how-it-works"
               className="text-[11px] text-sage underline-offset-4 hover:text-ivory hover:underline"

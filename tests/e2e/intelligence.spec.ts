@@ -24,6 +24,14 @@ test.describe("intelligence surfaces without a vault", () => {
     await expect(page.locator("body")).not.toContainText(/live protection/i);
   });
 
+  test("notification center labels in-app delivery only", async ({ page }) => {
+    await signInWithSandbox(page);
+    await page.goto("/notifications");
+    await expect(page.getByRole("heading", { name: /what needs your attention/i })).toBeVisible();
+    await expect(page.getByText(/in-app delivery/i).first()).toBeVisible();
+    await expect(page.getByText(/email, sms and push delivery are unavailable/i)).toBeVisible();
+  });
+
   test("finance, firewall and passport stay explicit without a vault", async ({ page }) => {
     await signInWithSandbox(page);
     await page.goto("/finance");
