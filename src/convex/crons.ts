@@ -10,7 +10,7 @@ const crons = cronJobs();
  */
 crons.interval(
   "nonce-testnet-indexer",
-  { minutes: 2 },
+  { minutes: 5 },
   internal.nonce.testnetIndexer.poll,
   {},
 );
