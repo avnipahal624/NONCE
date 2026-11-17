@@ -1,7 +1,8 @@
-# NONCE test results — 15 November 2026
+# NONCE test results — 17 November 2026
 
-**Status:** local engineering validation complete for the changed code. Browser
-E2E and live Base Sepolia transaction validation remain blocked.
+**Status:** local engineering validation complete for the changed code.
+Desktop and mobile browser E2E pass. Live Base Sepolia transaction validation
+remains blocked.
 
 This is not an independent audit. A pass means the command passed in this
 workspace at this time; it does not prove contract safety.
@@ -15,7 +16,7 @@ workspace at this time; it does not prove contract safety.
 | `bun run lint` | Exit 0; **0 errors, 19 warnings** |
 | `bun convex dev --once` | Exit 0; functions/codegen pushed |
 | `bunx playwright test --list` | 24 tests in 4 files |
-| `bunx playwright test` | **24 failed at browser launch**; missing Chromium, install blocked by ENOSPC |
+| `bunx playwright test` | **24 passed, 0 failed** in 1.4m; Chromium + Pixel 7 projects |
 | `bun test tests/policyRules.test.ts tests/wallet.test.ts tests/testnetConfig.test.ts tests/testnetWallet.test.ts tests/intelligence.test.ts` | **37 passed, 0 failed**, 76 expectations |
 
 The 19 lint warnings are Fast Refresh export-shape warnings in existing
@@ -157,15 +158,22 @@ Coverage checked in:
 - Copilot, Finance, Firewall, Notifications and Passport empty-state honesty;
 - mobile project (`Pixel 7`).
 
-**Run attempted; every test failed before page load.** `bunx playwright test`
-reported 22 failures at `browserType.launch`: no executable exists at
-`~/.cache/ms-playwright/chromium_headless_shell-1255/.../chrome-headless-shell`.
-`bunx playwright install chromium` and
-`bunx playwright install chromium-headless-shell` both failed with `ENOSPC`
-(the workspace had approximately 196 MB free; the browser archives are 126–199
-MiB before extraction). These are environment failures, not product assertion
-failures. No app page was exercised. Therefore this document does **not** claim
-browser E2E passed.
+**Run result:** `bunx playwright test` executed against a Playwright-owned Vite
+server on `127.0.0.1:4319` and passed **24/24 tests** in 1.4 minutes. Both the
+desktop Chromium project and the Pixel 7 mobile project passed all 12 cases.
+
+Observed during this pass:
+
+- The suite grew from 3 to 4 intelligence cases; the no-vault navigation case
+  now verifies a visible Passport entry point on mobile.
+- The mobile landing CTA is **“Protect my wallet”**; the public test locator was
+  corrected to match the shipped copy rather than a generic label.
+- The pass covers page rendering, routes, empty-state copy, auth redirects and
+  visible wallet-error handling. It does **not** connect a MetaMask extension,
+  create a funded vault, execute a withdrawal or exercise recovery.
+- Automated screenshots were captured for the landing, auth and no-vault P1
+  pages at desktop and mobile widths. A human visual review of those screens,
+  and a populated-vault visual review, were **not** performed.
 
 ## 6. Deployment validation
 
@@ -185,9 +193,12 @@ See [`NONCE_DEPLOYMENT_VERIFICATION.md`](./NONCE_DEPLOYMENT_VERIFICATION.md).
 - Basescan source verification — requires a real deployment and API key.
 - Real testnet deposits, withdrawals, approvals, freeze and recovery — require a
   deployed contract and wallet.
-- Playwright app assertions — the suite launched no browser; all 24 tests stopped
-  at `browserType.launch` because Chromium is missing and cannot be installed.
-- Accessibility audit, device matrix, load/soak testing and independent audit.
+- MetaMask/browser-extension E2E — the passing suite uses sandbox auth and no
+  injected wallet.
+- Populated-vault visual review — the captured pages are public/auth/no-vault
+  states only.
+- Accessibility audit, physical-device matrix, load/soak testing and independent
+  audit.
 
 ## 8. Reproduction
 

@@ -1,4 +1,4 @@
-# NONCE current audit — 15 November 2026
+# NONCE current audit — 17 November 2026
 
 **Scope:** current repository baseline, contract, Foundry suite, Convex backend,
 frontend routes, `/testnet` read/write layer, lint, build and testnet
@@ -6,8 +6,8 @@ configuration. This is an internal engineering audit, not an independent
 security audit.
 
 **Status:** local prototype validated; **no deployed Base Sepolia contract is
-configured**, no on-chain transaction was broadcast in this pass, and browser
-E2E could not be executed because the environment could not install a browser.
+configured** and no on-chain transaction was broadcast in this pass. Desktop and
+mobile browser E2E now pass locally.
 
 Git commands are blocked by this execution host, so this audit identifies source
 by SHA-256 rather than a Git commit.
@@ -28,7 +28,7 @@ by SHA-256 rather than a Git commit.
 | Slither | `slither . --filter-paths "lib|test|script"` | 13 results: **10 Low, 3 Informational, no High/Medium**; process exits 255 because findings exist |
 | RPC chain check | `cast chain-id --rpc-url https://sepolia.base.org` | **84532** |
 | Deployment config | `bunx convex env get ...` | **Not found** for all five testnet keys |
-| Browser E2E | `bunx playwright test --list` / `bunx playwright test` | 24 tests discovered; **all failed at browser launch** (missing Chromium, install `ENOSPC`), not at app assertions |
+| Browser E2E | `bunx playwright test` | **24 passed, 0 failed**; desktop Chromium and Pixel 7 projects |
 
 The lint warnings are Fast Refresh export-shape warnings in the existing
 shadcn/AppShell/main files and unused generated-file directives. No rule was
@@ -152,10 +152,10 @@ deferred server-state hydration, and removal of unused symbols. Lint now exits
    be performed yet.
 2. **No funded deployer keystore and no broadcast approval.** The existing owner
    address has no outgoing nonce.
-3. **No browser E2E execution.** Playwright tests are checked in and enumerate,
-   but a run failed all 24 tests at browser launch because Chromium could not be
-   downloaded (workspace had ~196 MB free; install requires more space). No app
-   assertion ran.
+3. **No wallet-extension or populated-vault browser test.** The 24 passing
+   Playwright cases use sandbox auth and no-vault states. MetaMask interaction,
+   a funded vault, withdrawal execution and recovery remain unexercised in a
+   browser, and no human visual review of a populated vault was performed.
 4. **No real testnet transaction validation.** Wallet-signed deposits,
    withdrawals, guardian approvals, freeze and recovery have not been exercised
    against a deployed contract.

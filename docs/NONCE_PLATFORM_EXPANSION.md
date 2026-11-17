@@ -3,7 +3,8 @@
 **Date:** 16 November 2026  
 **Status:** safe workspace implementation complete for the P1 slice below.
 **No deployment, broadcast, paid integration, commit, push or GitHub change was
-made.** Browser E2E and live testnet validation remain blocked.
+made.** Desktop and mobile browser E2E pass; live testnet validation remains
+blocked.
 
 This is an internal engineering record, not an independent audit. The existing
 NONCE vault, Convex auth/domain layer, sandbox/testnet separation and contract
@@ -67,7 +68,7 @@ security invariants were preserved.
 | External API error handling | **Not applicable / no external AI or finance API added** | No paid service introduced |
 | Background retries | **Existing indexer only** | No new background jobs |
 | Monitoring/alert checks | **Existing in-app/testnet health** | No email/SMS provider |
-| E2E tests | **Checked in, not executable here** | New intelligence spec; browser install blocked by ENOSPC |
+| E2E tests | **Implemented and passing** | 24/24 desktop Chromium + Pixel 7; intelligence spec adds 4 cases |
 
 ## 2. What was added safely
 
@@ -158,11 +159,12 @@ Executed in this workspace after the expansion:
 bun convex dev --once       # passed; new schema indexes and functions pushed
 bun tsc -b --noEmit         # passed
 bun test ...                # 37 passed, 0 failed
+bunx playwright test        # 24 passed, 0 failed
 ```
 
-The 37 tests include 15 new tests for the firewall, Copilot brief, Passport and
-feature flags. `tests/e2e/intelligence.spec.ts` adds 3 browser cases, but browser
-execution remains blocked by the missing Chromium binary and ENOSPC.
+The 37 unit tests include 15 new tests for the firewall, Copilot brief, Passport
+and feature flags. `tests/e2e/intelligence.spec.ts` adds 4 browser cases; the
+full browser suite passes on both desktop Chromium and Pixel 7.
 
 The full contract suite remains **53 passed** from the prior hardening pass; no
 contract source changed in this expansion.
@@ -173,8 +175,9 @@ contract source changed in this expansion.
    unavailable.
 2. No real testnet transaction was executed; the protected payment path is
    sandbox-only in this workspace.
-3. No browser E2E result. The new pages are compile-verified, not visually
-   reviewed.
+3. Browser E2E passes, but it covers public/auth/no-vault states only. A funded
+   vault, injected wallet and human visual review of populated P1 screens remain
+   unexercised.
 4. No external AI model is connected. “AI Copilot” is honest local
    explainability, not a hosted model.
 5. No verified fiat feed, allowance indexer, DeFi indexer, NFT operator indexer
@@ -206,8 +209,8 @@ Stop before any of the following:
 
 1. Deploy/verify the existing vault, then run live protected-payment and freeze
    evidence against it.
-2. Run the new E2E suite on a host with browser storage and fix only observed
-   failures.
+2. Extend the passing E2E suite with an injected-wallet flow and a funded-vault
+   visual review.
 3. Add a reviewed ERC-20 module in a separate contract, with hostile-token and
    decimal-normalization tests, before enabling the ERC-20 flag.
 4. Add an address-book-to-allowlist proposal path that still requires the

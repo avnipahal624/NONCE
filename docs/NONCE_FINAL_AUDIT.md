@@ -1,17 +1,16 @@
-# NONCE final audit — 15 November 2026
+# NONCE final audit — 17 November 2026
 
-> **16 November P1 expansion:** Copilot, Finance Overview, Security Passport,
-> Transaction Firewall and address book were added in the workspace. This does
-> not change the deployment/E2E blockers below. See
+> **P1 expansion:** Copilot, Finance Overview, Security Passport, Transaction
+> Firewall and address book were added in the workspace. See
 > [`NONCE_PLATFORM_EXPANSION.md`](./NONCE_PLATFORM_EXPANSION.md).
 
 **Verdict:** **not signed off as a fully validated Base Sepolia prototype.**
-The local application, contract test suite and safety fixes are in good shape,
-but deployment evidence, real testnet transactions and browser E2E are still
+The local application, contract test suite, browser E2E and safety fixes are in
+good shape, but deployment evidence and real testnet transactions are still
 missing. Those are acceptance blockers, not documentation details.
 
-No transaction was broadcast, no contract was deployed, no testnet ETH was
-spent, and no browser test was executed in this pass.
+No transaction was broadcast, no contract was deployed and no testnet ETH was
+spent in this pass. Browser E2E now passes locally for both desktop and mobile.
 
 ## 1. Acceptance criteria
 
@@ -23,7 +22,7 @@ spent, and no browser test was executed in this pass.
 | Contract tests pass | **PASS** | 53/53 (52 unit/invariant + 1 fork), 0 failed |
 | Fuzz/invariant expansion | **PASS** | 2 fuzz tests at 256 runs; 3 invariants, 256 runs, 128k calls |
 | Static analysis reviewed | **PASS with findings** | Slither: 10 Low, 3 Informational, 0 High/Medium |
-| Browser E2E passes | **BLOCKED** | 24 tests discovered; run failed at browser launch (missing Chromium, install `ENOSPC`), so no app assertion ran |
+| Browser E2E passes | **PASS** | 24/24 tests passed; desktop Chromium and Pixel 7 projects |
 | Deployment evidence verified | **BLOCKED** | no address, receipt, bytecode, source or role read |
 | Real testnet transactions validated | **BLOCKED** | no deployed contract or funded keystore |
 | Decoy-to-freeze demonstrated with authentic evidence | **BLOCKED** | sandbox pipeline exists; no on-chain freeze receipt |
@@ -44,7 +43,8 @@ spent, and no browser test was executed in this pass.
 - Testnet reads now include immutable policy/recovery delays, guardian count and
   threshold, allowlist count, and both freeze sources.
 - Corrected misleading testnet labels for epoch and withdrawal delay.
-- Playwright configuration and 24 tests checked in.
+- Playwright configuration and 24 tests checked in; all 24 pass on desktop and
+  mobile.
 - Six audit/validation documents with exact measured results.
 
 ## 3. What is not complete
@@ -68,11 +68,15 @@ The UI correctly refuses to pretend otherwise.
 
 ### Browser E2E
 
-`bunx playwright test --list` finds 24 tests, but no browser executable could be
-installed. A run attempt failed all 24 tests at `browserType.launch` because the
-Chromium headless shell is absent. The workspace had roughly 196 MB free;
-Chromium and the headless shell downloads both failed with `ENOSPC`. No
-browser/MetaMask interaction was viewed or tested.
+`bunx playwright test` passes all **24 tests** in 1.4 minutes: 12 desktop
+Chromium cases and 12 Pixel 7 cases across public, auth, sandbox, testnet,
+wallet-error and P1 intelligence surfaces. This validates routing, rendering,
+empty-state honesty and the visible wallet-error paths.
+
+It does **not** connect a MetaMask extension, create a funded vault, execute a
+withdrawal, approve a guardian or run recovery. Automated screenshots of
+landing/auth/no-vault pages were captured at desktop and mobile widths, but a
+human visual review of those screens or of a populated vault was not performed.
 
 ### Decoy-to-freeze
 
@@ -125,8 +129,10 @@ place. This pass prioritized truthful state over visual polish:
 - testnet metrics now expose immutable delays and both freeze sources;
 - no live status is fabricated when configuration is absent.
 
-A visual review was not possible without a browser. Treat the UI as
-compile-verified and source-reviewed, not visually verified.
+The no-vault and public surfaces are render-checked by browser E2E at desktop
+and mobile widths. A human visual review of full-page layouts and of a populated
+vault was not performed; treat populated-vault UI as compile-verified and
+source-reviewed, not visually verified.
 
 ## 6. Required next actions
 
@@ -140,7 +146,8 @@ To move from **local prototype** to **validated Base Sepolia prototype**:
 6. Run the read-only role/policy checks in
    `NONCE_DEPLOYMENT_VERIFICATION.md`.
 7. Execute the testnet sequence with real wallets and store receipts.
-8. Run Playwright on a host with browser storage, including the mobile project.
+8. Extend Playwright with an injected-wallet flow and a funded-vault visual
+   review; the existing desktop/mobile suite already passes.
 9. Update this document with actual hashes, block numbers and screenshots.
 
 ## 7. Approval requests
@@ -154,5 +161,5 @@ Approval is required before any of the following:
 - supplying a Basescan API key;
 - presenting the sandbox demonstration as live protection.
 
-Until then, the correct status is: **local code and contract tests validated;
-on-chain and browser validation outstanding.**
+Until then, the correct status is: **local code, contract tests and browser E2E
+validated; on-chain validation outstanding.**

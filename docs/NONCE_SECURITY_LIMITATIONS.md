@@ -108,10 +108,10 @@ assets.
 
 ## 6. Verification limits
 
-- Playwright tests are checked in but **no app assertion executed**: the run
-  failed at browser launch because the host could not install Chromium due to
-  disk space (`ENOSPC`).
-- No MetaMask or other wallet E2E was possible.
+- Playwright passes **24/24** tests locally across desktop Chromium and Pixel 7.
+  The suite uses sandbox auth and no-vault states; no MetaMask or other injected
+  wallet flow is exercised.
+- No human visual review of a populated vault was performed.
 - No real testnet deposit, withdrawal, guardian approval, freeze, recovery or
   restoration was executed.
 - No Basescan source verification was performed.
@@ -129,7 +129,8 @@ assets.
 4. Confirm a rejection from the wrong guardian/non-guardian.
 5. Confirm a freeze receipt and read `frozen()` afterward.
 6. Confirm recovery quorum, delay and epoch invalidation.
-7. Run the Playwright suite on a host with a browser, including mobile project.
+7. Extend the passing Playwright suite with an injected-wallet flow and a
+   funded-vault visual review.
 8. Record actual hashes, receipts and block numbers; never substitute dry-run
    addresses or simulated references.
 
