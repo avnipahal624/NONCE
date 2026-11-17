@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "env -u VERCEL convex codegen --typecheck disable && tsc -b && vite build",
+    "build": "VERCEL= CONVEX_DEPLOYMENT=local convex codegen --typecheck disable && tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write .",
     "preview": "vite preview",
