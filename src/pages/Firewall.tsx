@@ -1,3 +1,4 @@
+import { DappResearchPanel } from "@/components/nonce/DappResearchPanel";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useQuery } from "convex/react";
@@ -55,7 +56,7 @@ export default function Firewall() {
   if (!vault || !selected || !policy) {
     return (
       <AppShell>
-        <NoVaultYet />
+        <div className="space-y-6"><DappResearchPanel /><NoVaultYet /></div>
       </AppShell>
     );
   }
@@ -91,6 +92,8 @@ export default function Firewall() {
             still waits for the backend, the saved delay and any guardian quorum.
           </span>
         </div>
+
+        <DappResearchPanel />
 
         <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
           <section className="rounded-2xl border border-hairline/70 bg-[#0b1f17]/75 p-5">

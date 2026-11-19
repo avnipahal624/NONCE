@@ -514,6 +514,13 @@ const schema = defineSchema(
       deliveredAt: v.number(),
     }).index("by_user", ["userId"]),
 
+    dappResearchLimits: defineTable({
+      subject: v.string(),
+      lastStartedAt: v.number(),
+      day: v.number(),
+      count: v.number(),
+    }).index("by_subject", ["subject"]),
+
     auditEvents: defineTable({
       userId: v.optional(v.id("users")),
       vaultId: v.optional(v.id("vaults")),
